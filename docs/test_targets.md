@@ -4,5 +4,7 @@ Inevitably, things will break and need to be retested or won't work on a specifi
 
 | CVE | Platform | Version | Storage | Username | Password |
 |-|-|-|-|-|-|
-| [CVE-2021-22205](https://nvd.nist.gov/vuln/detail/CVE-2021-22205) | Ubuntu 20.04 | 13.10 | Jake's external (virtual box) | root | sl0wrunner! |
+| [CVE-2021-22205](https://nvd.nist.gov/vuln/detail/CVE-2021-22205) | Ubuntu 20.04 | GitLab 13.10 | Jake's external (virtual box) | root | sl0wrunner! |
 | [CVE-2021-36260](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-36260) | HWI-B120-D/W | V5.5.101 build 200408 | Jake's house | admin | labpass1 |
+| [CVE-2022-26134](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-26134) | Ubuntu 20.04 | Confluence 7.17.3 | Jake's external (virtual box) | confluenceuser | labpass1 |
+| [CVE-2022-1040](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-1040) | Virtual Box | 18.5 MR2 | Jake's external | N/A | N/A |
