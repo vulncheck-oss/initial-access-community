@@ -9,3 +9,4 @@ Inevitably, things will break and need to be retested or won't work on a specifi
 | [CVE-2022-26134](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-26134) | Ubuntu 20.04 | Confluence 7.17.3 | Jake's external (virtual box) | confluenceuser | labpass1 |
 | [CVE-2022-1040](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-1040) | Virtual Box | 18.5 MR2 | Jake's external | N/A | N/A |
 | [CVE-2022-26352](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2022-26352) | Ubuntu 20.04| dotCMS 21.06 | Jake's external | N/A | N/A |
+| [CVE-2022-31814](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2022-31814) | pfSense ISO| pfSense 2.6.0 | Jake's external | N/A | N/A |
