@@ -1,6 +1,7 @@
 # KEV Measurements
 The total number of 'Initial Access' KEV entries includes traditional IA + credentialed IA + remote/unauth info leak.  
 The major reason for this is due to exploits chains combining credentialed+infoleak to achieve unauth rce.  
+  
 *Total Initial-Access KEV Entries*: 412
     
 *Emerging Threats Coverage*: 169 / 412  
