@@ -219,7 +219,7 @@ func get_metasploit(token string, kev map[string]int) (map[string]int, bool) {
 		body := string(body_bytes)
 
 		// this is the laziest possible way to do this
-		if strings.Contains(body, `"refsource": "metasploit"`) {
+		if strings.Contains(body, `"refsource":"metasploit"`) {
 			cve_map[cve] = 1
 		}
 	}
@@ -291,7 +291,7 @@ func generate_output(ia_feed map[string]ia, et_rules map[string]int, kev map[str
 	}
 
 	table := "|CVE|ET Sig|IA Sig|IA Shodan|IA Censys|IA Exploit|IA Scanner|Metasploit|\n"
-	table += "| --- | --- | --- | --- | --- | --- | --- |\n"
+	table += "| --- | --- | --- | --- | --- | --- | --- | --- |\n"
 	for _, cve := range kev_keys {
 		table += cve
 		table += "|"
