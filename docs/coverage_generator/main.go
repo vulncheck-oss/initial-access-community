@@ -269,43 +269,43 @@ func generate_output(ia_feed map[string]ia, et_rules map[string]int, kev map[str
 		table += "|"
 		_, ok := et_rules[cve]
 		if ok {
-			table += "[x]|"
+			table += "✔️|"
 			et_for_kev += 1
 		} else {
-			table += "[]|"
+			table += "|"
 		}
 
 		ia_entry, ok := ia_feed[cve]
 		if ok {
 			if ia_entry.Signature {
-				table += "[x]|"
+				table += "✔️|"
 				ia_sig_kev += 1
 			} else {
-				table += "[]|"
+				table += "|"
 			}
 
 			if ia_entry.Shodan {
-				table += "[x]|"
+				table += "✔️|"
 				ia_shodan_kev += 1
 			} else {
-				table += "[]|"
+				table += "|"
 			}
 
 			if ia_entry.Censys {
-				table += "[x]|"
+				table += "✔️|"
 				ia_censys_kev += 1
 			} else {
-				table += "[]|"
+				table += "|"
 			}
 
 			if ia_entry.Exploit {
-				table += "[x]|"
+				table += "✔️|"
 				ia_exploit_kev += 1
 			} else {
-				table += "[]|"
+				table += "|"
 			}
 		} else {
-			table += "|[]|[]|[]|"
+			table += "||||"
 		}
 		table += "\n"
 	}
