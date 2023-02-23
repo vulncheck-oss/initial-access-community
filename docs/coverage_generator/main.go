@@ -213,7 +213,7 @@ func isIA(cve_json []byte) bool {
 	} else {
 		v2, _, _, err := jsonparser.Get(entry_json, "impact", "baseMetricV2", "cvssV2")
 		if err != nil {
-			fmt.Println("Failed to parse v2: " + string(cve_json))
+			// fmt.Println("Failed to parse v2: " + string(cve_json))
 			return false
 		}
 		userInter, _ := jsonparser.GetBoolean(entry_json, "impact", "baseMetricV2", "userInteractionRequired")
@@ -262,7 +262,7 @@ func generate_output(ia_feed map[string]ia, et_rules map[string]int, kev map[str
 		kev_keys[i], kev_keys[j] = kev_keys[j], kev_keys[i]
 	}
 
-	table := "|CVE|ET Sig|IA Sig|IA Shodan|IA Censys|IA Exploit|"
+	table := "|CVE|ET Sig|IA Sig|IA Shodan|IA Censys|IA Exploit|\n"
 	for _, cve := range kev_keys {
 		table += cve
 		table += "|"
