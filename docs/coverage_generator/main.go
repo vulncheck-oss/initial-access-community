@@ -28,6 +28,7 @@ type ia struct {
 	Shodan    bool
 	Censys    bool
 	Exploit   bool
+	Scanner   bool
 }
 
 // Categorizes the CVE based on elements from the CVSSv3 or CVSSv2 vector:
@@ -135,8 +136,9 @@ func get_ia_json(token string) (map[string]ia, bool) {
 		_, shodan_err := jsonparser.GetString(value, "artifacts", "[0]", "shodanQueries", "[0]")
 		_, censys_err := jsonparser.GetString(value, "artifacts", "[0]", "censysQueries", "[0]")
 		exploit, _ := jsonparser.GetBoolean(value, "artifacts", "[0]", "exploit")
+		scanner, _ := jsonparser.GetBoolean(value, "artifacts", "[0]", "versionScanner")
 
-		cve_map[cve] = ia{Signature: signature, Shodan: shodan_err == nil, Censys: censys_err == nil, Exploit: exploit}
+		cve_map[cve] = ia{Signature: signature, Shodan: shodan_err == nil, Censys: censys_err == nil, Exploit: exploit, Scanner: scanner}
 	})
 
 	return cve_map, true
@@ -249,6 +251,7 @@ func generate_output(ia_feed map[string]ia, et_rules map[string]int, kev map[str
 	ia_shodan_kev := 0
 	ia_censys_kev := 0
 	ia_exploit_kev := 0
+	ia_version_scanner := 0
 
 	// sort the kev entries
 	kev_keys := make([]string, 0, len(kev))
@@ -262,8 +265,8 @@ func generate_output(ia_feed map[string]ia, et_rules map[string]int, kev map[str
 		kev_keys[i], kev_keys[j] = kev_keys[j], kev_keys[i]
 	}
 
-	table := "|CVE|ET Sig|IA Sig|IA Shodan|IA Censys|IA Exploit|\n"
-	table += "| --- | --- | --- | --- | --- | --- |\n"
+	table := "|CVE|ET Sig|IA Sig|IA Shodan|IA Censys|IA Exploit|IA Scanner|\n"
+	table += "| --- | --- | --- | --- | --- | --- | --- |\n"
 	for _, cve := range kev_keys {
 		table += cve
 		table += "|"
@@ -304,8 +307,15 @@ func generate_output(ia_feed map[string]ia, et_rules map[string]int, kev map[str
 			} else {
 				table += "|"
 			}
+
+			if ia_entry.Scanner {
+				table += "✔️|"
+				ia_version_scanner += 1
+			} else {
+				table += "|"
+			}
 		} else {
-			table += "||||"
+			table += "|||||"
 		}
 		table += "\n"
 	}
@@ -319,6 +329,7 @@ func generate_output(ia_feed map[string]ia, et_rules map[string]int, kev map[str
 	fmt.Printf("*IA Shodan Coverage*: %d / %d  \n", ia_shodan_kev, len(kev))
 	fmt.Printf("*IA Censys Coverage*: %d / %d  \n", ia_censys_kev, len(kev))
 	fmt.Printf("*IA Exploit Coverage*: %d / %d  \n", ia_exploit_kev, len(kev))
+	fmt.Printf("*IA Version Scanner*: %d / %d  \n", ia_version_scanner, len(kev))
 	fmt.Println("  ")
 	fmt.Println("\n## Coverage Table")
 	fmt.Println(table)
