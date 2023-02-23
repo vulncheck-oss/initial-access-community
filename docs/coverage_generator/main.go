@@ -310,16 +310,15 @@ func generate_output(ia_feed map[string]ia, et_rules map[string]int, kev map[str
 		table += "\n"
 	}
 
-	fmt.Printf("The total number of 'Initial Access' KEV entries includes traditional IA + credentialed IA + remote/unauth info leak.\n  The major reason for this is due to exploits chains combining credentialed+infoleak to achieve unauth rce.\n  ")
-	fmt.Printf("")
+	fmt.Printf("The total number of 'Initial Access' KEV entries includes traditional IA + credentialed IA + remote/unauth info leak.  \nThe major reason for this is due to exploits chains combining credentialed+infoleak to achieve unauth rce.  \n")
 	fmt.Printf("*Total Initial-Access KEV Entries*: %d\n  ", len(kev))
-	fmt.Println("")
+	fmt.Println("  ")
 	fmt.Printf("*Emerging Threats Coverage*: %d / %d  \n", et_for_kev, len(kev))
 	fmt.Printf("*IA Signature Coverage*: %d / %d  \n", ia_sig_kev, len(kev))
 	fmt.Printf("*IA Shodan Coverage*: %d / %d  \n", ia_shodan_kev, len(kev))
 	fmt.Printf("*IA Censys Coverage*: %d / %d  \n", ia_censys_kev, len(kev))
 	fmt.Printf("*IA Exploit Coverage*: %d / %d  \n", ia_exploit_kev, len(kev))
-	fmt.Println("")
+	fmt.Println("  ")
 	fmt.Println("\n## Coverage Table")
 	fmt.Println(table)
 }
