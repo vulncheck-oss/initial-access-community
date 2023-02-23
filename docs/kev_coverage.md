@@ -15,7 +15,7 @@ The reason for that is there are a number of exploit chains that achieve unauth 
 
 ## Coverage Table
 |CVE|ET Sig|IA Sig|IA Shodan|IA Censys|IA Exploit|IA Scanner|Metasploit|
-| --- | --- | --- | --- | --- | --- | --- |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 CVE-2023-22952||||||||
 CVE-2023-0669|✔️|||||||
 CVE-2022-47966|✔️|✔️|✔️|✔️|✔️|||
