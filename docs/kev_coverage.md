@@ -6,7 +6,7 @@ The total number of "Initial Access" KEV entries includes traditional IA + crede
 *IA Signature Coverage*: 36 / 412  
 *IA Shodan Coverage*: 33 / 412  
 *IA Censys Coverage*: 31 / 412  
-*IA Exploit Coverage*: 31 / 412  
+*IA Exploit Coverage*: 36 / 412  
 
 
 ## Coverage Table
