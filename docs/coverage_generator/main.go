@@ -202,6 +202,30 @@ func get_kev_catalog() (map[string]int, bool) {
 	return cve_map, true
 }
 
+func get_metasploit(token string, kev map[string]int) (map[string]int, bool) {
+	cve_map := make(map[string]int)
+	for cve := range kev {
+		req, _ := http.NewRequest("GET", "https://api.vulncheck.com/v2/exploits/cve/"+cve, nil)
+		req.Header.Add("Authorization", "Bearer "+token)
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			continue
+		}
+
+		defer resp.Body.Close()
+		body_bytes, _ := io.ReadAll(resp.Body)
+		body := string(body_bytes)
+
+		// this is the laziest possible way to do this
+		if strings.Contains(body, `"refsource": "metasploit"`) {
+			cve_map[cve] = 1
+		}
+	}
+	return cve_map, true
+}
+
 func isIA(cve_json []byte) bool {
 	entry_json, _, _, err := jsonparser.Get(cve_json, "results", "[0]")
 	if err != nil {
@@ -243,7 +267,7 @@ func ia_filter(token string, kev_catalog map[string]int) (map[string]int, bool) 
 	return cve_map, true
 }
 
-func generate_output(ia_feed map[string]ia, et_rules map[string]int, kev map[string]int) {
+func generate_output(ia_feed map[string]ia, et_rules map[string]int, kev map[string]int, metasploit map[string]int) {
 	fmt.Println("# KEV Measurements")
 
 	et_for_kev := 0
@@ -252,6 +276,7 @@ func generate_output(ia_feed map[string]ia, et_rules map[string]int, kev map[str
 	ia_censys_kev := 0
 	ia_exploit_kev := 0
 	ia_version_scanner := 0
+	metasploit_coverage := 0
 
 	// sort the kev entries
 	kev_keys := make([]string, 0, len(kev))
@@ -265,7 +290,7 @@ func generate_output(ia_feed map[string]ia, et_rules map[string]int, kev map[str
 		kev_keys[i], kev_keys[j] = kev_keys[j], kev_keys[i]
 	}
 
-	table := "|CVE|ET Sig|IA Sig|IA Shodan|IA Censys|IA Exploit|IA Scanner|\n"
+	table := "|CVE|ET Sig|IA Sig|IA Shodan|IA Censys|IA Exploit|IA Scanner|Metasploit|\n"
 	table += "| --- | --- | --- | --- | --- | --- | --- |\n"
 	for _, cve := range kev_keys {
 		table += cve
@@ -317,6 +342,14 @@ func generate_output(ia_feed map[string]ia, et_rules map[string]int, kev map[str
 		} else {
 			table += "|||||"
 		}
+
+		_, ok = metasploit[cve]
+		if ok {
+			table += "✔️|"
+			metasploit_coverage += 1
+		} else {
+			table += "|"
+		}
 		table += "\n"
 	}
 
@@ -330,6 +363,7 @@ func generate_output(ia_feed map[string]ia, et_rules map[string]int, kev map[str
 	fmt.Printf("*IA Censys Coverage*: %d / %d  \n", ia_censys_kev, len(kev))
 	fmt.Printf("*IA Exploit Coverage*: %d / %d  \n", ia_exploit_kev, len(kev))
 	fmt.Printf("*IA Version Scanner*: %d / %d  \n", ia_version_scanner, len(kev))
+	fmt.Printf("*Metasploit*: %d / %d  \n", metasploit_coverage, len(kev))
 	fmt.Println("  ")
 	fmt.Println("\n## Coverage Table")
 	fmt.Println(table)
@@ -366,5 +400,10 @@ func main() {
 		return
 	}
 
-	generate_output(ia_feed, et_rules, ia_only)
+	metasploit, ok := get_metasploit(bearer_token, ia_only)
+	if !ok {
+		return
+	}
+
+	generate_output(ia_feed, et_rules, ia_only, metasploit)
 }
