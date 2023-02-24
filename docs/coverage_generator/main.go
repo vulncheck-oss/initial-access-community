@@ -226,6 +226,28 @@ func get_metasploit(token string, kev map[string]int) (map[string]int, bool) {
 	return cve_map, true
 }
 
+func get_nuclei(kev map[string]int) (map[string]int, bool) {
+	cve_map := make(map[string]int)
+	resp, err := http.Get("https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/cves.json")
+	if err != nil {
+		fmt.Println("[-] KEV download failed.")
+		return cve_map, false
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, _ := io.ReadAll(resp.Body)
+	body := string(bodyBytes)
+
+	// weirdly, the cves.json isn't one big valid json doc, but a series of small json blobs. So we'll be lazy
+	// again and use strings to hunt for the data we want
+	for cve := range kev {
+		if strings.Contains(body, `{"ID":"`+cve) {
+			cve_map[cve] = 1
+		}
+	}
+	return cve_map, true
+}
+
 func isIA(cve_json []byte) bool {
 	entry_json, _, _, err := jsonparser.Get(cve_json, "results", "[0]")
 	if err != nil {
@@ -267,7 +289,7 @@ func ia_filter(token string, kev_catalog map[string]int) (map[string]int, bool) 
 	return cve_map, true
 }
 
-func generate_output(ia_feed map[string]ia, et_rules map[string]int, kev map[string]int, metasploit map[string]int) {
+func generate_output(ia_feed map[string]ia, et_rules map[string]int, kev map[string]int, metasploit map[string]int, nuclei map[string]int) {
 	fmt.Println("# KEV Measurements")
 
 	et_for_kev := 0
@@ -277,6 +299,7 @@ func generate_output(ia_feed map[string]ia, et_rules map[string]int, kev map[str
 	ia_exploit_kev := 0
 	ia_version_scanner := 0
 	metasploit_coverage := 0
+	nuclei_coverage := 0
 
 	// sort the kev entries
 	kev_keys := make([]string, 0, len(kev))
@@ -290,8 +313,8 @@ func generate_output(ia_feed map[string]ia, et_rules map[string]int, kev map[str
 		kev_keys[i], kev_keys[j] = kev_keys[j], kev_keys[i]
 	}
 
-	table := "|CVE|ET Sig|IA Sig|IA Shodan|IA Censys|IA Exploit|IA Scanner|Metasploit|\n"
-	table += "| --- | --- | --- | --- | --- | --- | --- | --- |\n"
+	table := "|CVE|ET Sig|IA Sig|IA Shodan|IA Censys|IA Exploit|IA Scanner|Metasploit|Nuclei\n"
+	table += "| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n"
 	for _, cve := range kev_keys {
 		table += cve
 		table += "|"
@@ -350,6 +373,14 @@ func generate_output(ia_feed map[string]ia, et_rules map[string]int, kev map[str
 		} else {
 			table += "|"
 		}
+
+		_, ok = nuclei[cve]
+		if ok {
+			table += "✔️|"
+			nuclei_coverage += 1
+		} else {
+			table += "|"
+		}
 		table += "\n"
 	}
 
@@ -364,6 +395,7 @@ func generate_output(ia_feed map[string]ia, et_rules map[string]int, kev map[str
 	fmt.Printf("*IA Exploit Coverage*: %d / %d  \n", ia_exploit_kev, len(kev))
 	fmt.Printf("*IA Version Scanner*: %d / %d  \n", ia_version_scanner, len(kev))
 	fmt.Printf("*Metasploit*: %d / %d  \n", metasploit_coverage, len(kev))
+	fmt.Printf("*Nuclei*: %d / %d  \n", nuclei_coverage, len(kev))
 	fmt.Println("  ")
 	fmt.Println("\n## Coverage Table")
 	fmt.Println(table)
@@ -405,5 +437,10 @@ func main() {
 		return
 	}
 
-	generate_output(ia_feed, et_rules, ia_only, metasploit)
+	nuclei, ok := get_nuclei(ia_only)
+	if !ok {
+		return
+	}
+
+	generate_output(ia_feed, et_rules, ia_only, metasploit, nuclei)
 }
