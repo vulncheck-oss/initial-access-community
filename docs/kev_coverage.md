@@ -5,19 +5,19 @@ The reason for that is there are a number of exploit chains that achieve unauth 
 *Total Initial-Access KEV Entries*: 412
     
 *Emerging Threats Coverage*: 169 / 412  
-*IA Signature Coverage*: 36 / 412  
-*IA Shodan Coverage*: 33 / 412  
-*IA Censys Coverage*: 31 / 412  
+*IA Signature Coverage*: 37 / 412  
+*IA Shodan Coverage*: 34 / 412  
+*IA Censys Coverage*: 32 / 412  
 *IA Exploit Coverage*: 36 / 412  
 *IA Version Scanner*: 27 / 412  
 *Metasploit*: 169 / 412  
-*Nuclei*: 146 / 412  
+*Nuclei*: 145 / 412  
   
 
 ## Coverage Table
 |CVE|ET Sig|IA Sig|IA Shodan|IA Censys|IA Exploit|IA Scanner|Metasploit|Nuclei
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-CVE-2023-22952|||||||||
+CVE-2023-22952||✔️|✔️|✔️|||||
 CVE-2023-0669|✔️||||||✔️|✔️|
 CVE-2022-47966|✔️|✔️|✔️|✔️|✔️||✔️|✔️|
 CVE-2022-46169|✔️|✔️|✔️|✔️|✔️|✔️|✔️|✔️|
@@ -246,7 +246,7 @@ CVE-2019-16928|✔️||||||||
 CVE-2019-16920|✔️|||||||✔️|
 CVE-2019-16759|||||||✔️|✔️|
 CVE-2019-1653|✔️|✔️|✔️|✔️|✔️|✔️|✔️|✔️|
-CVE-2019-1652|✔️|✔️|✔️|✔️|✔️||✔️|✔️|
+CVE-2019-1652|✔️|✔️|✔️|✔️|✔️||✔️||
 CVE-2019-16256|||||||||
 CVE-2019-16057|✔️||||||||
 CVE-2019-15949|✔️||||||✔️||

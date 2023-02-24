@@ -241,7 +241,7 @@ func get_nuclei(kev map[string]int) (map[string]int, bool) {
 	// weirdly, the cves.json isn't one big valid json doc, but a series of small json blobs. So we'll be lazy
 	// again and use strings to hunt for the data we want
 	for cve := range kev {
-		if strings.Contains(body, `{"ID":"`+cve) {
+		if strings.Contains(body, `{"ID":"`+cve+`"`) {
 			cve_map[cve] = 1
 		}
 	}
