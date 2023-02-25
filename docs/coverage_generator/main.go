@@ -202,27 +202,27 @@ func get_kev_catalog() (map[string]int, bool) {
 	return cve_map, true
 }
 
-func get_metasploit(token string, kev map[string]int) (map[string]int, bool) {
+func get_metasploit(kev map[string]int) (map[string]int, bool) {
 	cve_map := make(map[string]int)
-	for cve := range kev {
-		req, _ := http.NewRequest("GET", "https://api.vulncheck.com/v2/exploits/cve/"+cve, nil)
-		req.Header.Add("Authorization", "Bearer "+token)
-
-		client := &http.Client{}
-		resp, err := client.Do(req)
-		if err != nil {
-			continue
-		}
-
-		defer resp.Body.Close()
-		body_bytes, _ := io.ReadAll(resp.Body)
-		body := string(body_bytes)
-
-		// this is the laziest possible way to do this
-		if strings.Contains(body, `"refsource":"metasploit"`) {
-			cve_map[cve] = 1
-		}
+	resp, err := http.Get("https://raw.githubusercontent.com/rapid7/metasploit-framework/master/db/modules_metadata_base.json")
+	if err != nil {
+		fmt.Println("[-] Metasploit download failed.")
+		return cve_map, false
 	}
+	defer resp.Body.Close()
+
+	bodyBytes, _ := io.ReadAll(resp.Body)
+
+	_ = jsonparser.ObjectEach(bodyBytes, func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
+		_, _ = jsonparser.ArrayEach(value, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
+			if ref := string(value); strings.HasPrefix(ref, "CVE-") && kev[ref] == 1 {
+				cve_map[ref] = 1
+			}
+		}, "references")
+
+		return nil
+	})
+
 	return cve_map, true
 }
 
@@ -230,7 +230,7 @@ func get_nuclei(kev map[string]int) (map[string]int, bool) {
 	cve_map := make(map[string]int)
 	resp, err := http.Get("https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/cves.json")
 	if err != nil {
-		fmt.Println("[-] KEV download failed.")
+		fmt.Println("[-] Nuclei download failed.")
 		return cve_map, false
 	}
 	defer resp.Body.Close()
@@ -239,7 +239,7 @@ func get_nuclei(kev map[string]int) (map[string]int, bool) {
 	body := string(bodyBytes)
 
 	// weirdly, the cves.json isn't one big valid json doc, but a series of small json blobs. So we'll be lazy
-	// again and use strings to hunt for the data we want
+	// and use strings to hunt for the data we want
 	for cve := range kev {
 		if strings.Contains(body, `{"ID":"`+cve+`"`) {
 			cve_map[cve] = 1
@@ -432,7 +432,7 @@ func main() {
 		return
 	}
 
-	metasploit, ok := get_metasploit(bearer_token, ia_only)
+	metasploit, ok := get_metasploit(ia_only)
 	if !ok {
 		return
 	}
