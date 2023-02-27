@@ -2,16 +2,16 @@
 The total number of "Initial Access" KEV entries includes all the traditional IA, plus credentialed IA and remote/unauth info leak.  
 The reason for that is there are a number of exploit chains that achieve unauth rce via infoleak+credentialed rce.  
   
-*Total Initial-Access KEV Entries*: 340
+*Total Initial-Access KEV Entries*: 341
     
-*Emerging Threats Coverage*: 145 / 340  
-*IA Signature Coverage*: 33 / 340  
-*IA Shodan Coverage*: 30 / 340  
-*IA Censys Coverage*: 28 / 340  
-*IA Exploit Coverage*: 33 / 340  
-*IA Version Scanner*: 26 / 340  
-*Metasploit*: 168 / 340  
-*Nuclei*: 134 / 340  
+*Emerging Threats Coverage*: 145 / 341  
+*IA Signature Coverage*: 34 / 341  
+*IA Shodan Coverage*: 31 / 341  
+*IA Censys Coverage*: 29 / 341  
+*IA Exploit Coverage*: 33 / 341  
+*IA Version Scanner*: 26 / 341  
+*Metasploit*: 168 / 341  
+*Nuclei*: 135 / 341  
   
 
 ## Coverage Table
@@ -23,8 +23,9 @@ CVE-2022-44877|✔️|✔️|✔️|✔️|✔️|✔️|✔️|✔️|
 CVE-2022-42475|||||||||
 CVE-2022-41352|✔️||||||✔️||
 CVE-2022-41080|||||||||
-CVE-2022-40684|✔️||||||✔️|✔️|
+CVE-2022-40684|✔️|✔️|✔️|✔️|||✔️|✔️|
 CVE-2022-37042|||||||✔️|✔️|
+CVE-2022-36537||||||||✔️|
 CVE-2022-35405|✔️|✔️|✔️|✔️|✔️|✔️|✔️|✔️|
 CVE-2022-3236||✔️|✔️|✔️|✔️|✔️|||
 CVE-2022-30525|✔️|✔️|✔️|✔️|✔️|✔️|✔️|✔️|
