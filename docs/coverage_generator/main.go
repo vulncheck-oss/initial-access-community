@@ -24,11 +24,12 @@ const (
 )
 
 type ia struct {
-	Signature bool
-	Shodan    bool
-	Censys    bool
-	Exploit   bool
-	Scanner   bool
+	Suricata_signature bool
+	Snort_signature    bool
+	Shodan             bool
+	Censys             bool
+	Exploit            bool
+	Scanner            bool
 }
 
 // Categorizes the CVE based on elements from the CVSSv3 or CVSSv2 vector:
@@ -132,21 +133,54 @@ func get_ia_json(token string) (map[string]ia, bool) {
 		cve, _ := jsonparser.GetString(value, "cve")
 
 		// note that indexing to [0] is technically wrong but sufficient for this script
-		signature, _ := jsonparser.GetBoolean(value, "artifacts", "[0]", "suricataRule")
+		suricataSignature, _ := jsonparser.GetBoolean(value, "artifacts", "[0]", "suricataRule")
+		snortSignature, _ := jsonparser.GetBoolean(value, "artifacts", "[0]", "snortRule")
 		_, shodan_err := jsonparser.GetString(value, "artifacts", "[0]", "shodanQueries", "[0]")
 		_, censys_err := jsonparser.GetString(value, "artifacts", "[0]", "censysQueries", "[0]")
 		exploit, _ := jsonparser.GetBoolean(value, "artifacts", "[0]", "exploit")
 		scanner, _ := jsonparser.GetBoolean(value, "artifacts", "[0]", "versionScanner")
 
-		cve_map[cve] = ia{Signature: signature, Shodan: shodan_err == nil, Censys: censys_err == nil, Exploit: exploit, Scanner: scanner}
+		cve_map[cve] = ia{Suricata_signature: suricataSignature, Snort_signature: snortSignature, Shodan: shodan_err == nil, Censys: censys_err == nil, Exploit: exploit, Scanner: scanner}
 	})
 
 	return cve_map, true
 }
 
-func get_emerging_threat_rules() (map[string]int, bool) {
+func get_emerging_threat_suricata_rules() (map[string]int, bool) {
 	cve_map := make(map[string]int)
 	resp, err := http.Get("https://rules.emergingthreats.net/open/suricata-6.0/emerging-all.rules")
+	if err != nil {
+		fmt.Println("[-] ET rules download failed.")
+		return cve_map, false
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, _ := io.ReadAll(resp.Body)
+	rules := string(bodyBytes)
+
+	rules_slice := strings.Split(rules, "\n")
+	for _, rule := range rules_slice {
+
+		if !strings.Contains(rule, "reference:cve,") {
+			continue
+		}
+
+		re := regexp.MustCompile(`reference:cve,(\d{4}-\d{4,})`)
+		res := re.FindAllStringSubmatch(rule, -1)
+		if len(res) == 0 {
+			continue
+		}
+
+		cve := "CVE-" + res[0][1]
+		cve_map[cve] = 1
+	}
+
+	return cve_map, true
+}
+
+func get_emerging_threat_snort_rules() (map[string]int, bool) {
+	cve_map := make(map[string]int)
+	resp, err := http.Get("https://rules.emergingthreats.net/open/snort-2.9.0/emerging-all.rules")
 	if err != nil {
 		fmt.Println("[-] ET rules download failed.")
 		return cve_map, false
@@ -289,11 +323,12 @@ func ia_filter(token string, kev_catalog map[string]int) (map[string]int, bool) 
 	return cve_map, true
 }
 
-func generate_output(ia_feed map[string]ia, et_rules map[string]int, kev map[string]int, metasploit map[string]int, nuclei map[string]int) {
+func generate_output(ia_feed map[string]ia, et_suricata_rules map[string]int, et_snort_rules map[string]int, kev map[string]int, metasploit map[string]int, nuclei map[string]int) {
 	fmt.Println("# KEV Measurements")
 
 	et_for_kev := 0
-	ia_sig_kev := 0
+	ia_suri_sig_kev := 0
+	ia_snort_sig_kev := 0
 	ia_shodan_kev := 0
 	ia_censys_kev := 0
 	ia_exploit_kev := 0
@@ -313,12 +348,20 @@ func generate_output(ia_feed map[string]ia, et_rules map[string]int, kev map[str
 		kev_keys[i], kev_keys[j] = kev_keys[j], kev_keys[i]
 	}
 
-	table := "|CVE|ET Sig|IA Sig|IA Shodan|IA Censys|IA Exploit|IA Scanner|Metasploit|Nuclei\n"
-	table += "| --- | --- | --- | --- | --- | --- | --- | --- | --- |\n"
+	table := "|CVE|ET Suri|ET Snort|IA Suri|IA Snort|IA Shodan|IA Censys|IA Exploit|IA Scanner|Metasploit|Nuclei\n"
+	table += "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n"
 	for _, cve := range kev_keys {
 		table += cve
 		table += "|"
-		_, ok := et_rules[cve]
+		_, ok := et_suricata_rules[cve]
+		if ok {
+			table += "✔️|"
+			et_for_kev += 1
+		} else {
+			table += "|"
+		}
+
+		_, ok = et_snort_rules[cve]
 		if ok {
 			table += "✔️|"
 			et_for_kev += 1
@@ -328,9 +371,16 @@ func generate_output(ia_feed map[string]ia, et_rules map[string]int, kev map[str
 
 		ia_entry, ok := ia_feed[cve]
 		if ok {
-			if ia_entry.Signature {
+			if ia_entry.Suricata_signature {
 				table += "✔️|"
-				ia_sig_kev += 1
+				ia_suri_sig_kev += 1
+			} else {
+				table += "|"
+			}
+
+			if ia_entry.Snort_signature {
+				table += "✔️|"
+				ia_snort_sig_kev += 1
 			} else {
 				table += "|"
 			}
@@ -363,7 +413,7 @@ func generate_output(ia_feed map[string]ia, et_rules map[string]int, kev map[str
 				table += "|"
 			}
 		} else {
-			table += "|||||"
+			table += "||||||"
 		}
 
 		_, ok = metasploit[cve]
@@ -389,7 +439,8 @@ func generate_output(ia_feed map[string]ia, et_rules map[string]int, kev map[str
 	fmt.Printf("*Total Initial-Access KEV Entries*: %d\n  ", len(kev))
 	fmt.Println("  ")
 	fmt.Printf("*Emerging Threats Coverage*: %d / %d  \n", et_for_kev, len(kev))
-	fmt.Printf("*IA Signature Coverage*: %d / %d  \n", ia_sig_kev, len(kev))
+	fmt.Printf("*IA Suricata Signature Coverage*: %d / %d  \n", ia_suri_sig_kev, len(kev))
+	fmt.Printf("*IA Snort Signature Coverage*: %d / %d  \n", ia_snort_sig_kev, len(kev))
 	fmt.Printf("*IA Shodan Coverage*: %d / %d  \n", ia_shodan_kev, len(kev))
 	fmt.Printf("*IA Censys Coverage*: %d / %d  \n", ia_censys_kev, len(kev))
 	fmt.Printf("*IA Exploit Coverage*: %d / %d  \n", ia_exploit_kev, len(kev))
@@ -417,7 +468,12 @@ func main() {
 		return
 	}
 
-	et_rules, ok := get_emerging_threat_rules()
+	et_suricata_rules, ok := get_emerging_threat_suricata_rules()
+	if !ok {
+		return
+	}
+
+	et_snort_rules, ok := get_emerging_threat_snort_rules()
 	if !ok {
 		return
 	}
@@ -442,5 +498,5 @@ func main() {
 		return
 	}
 
-	generate_output(ia_feed, et_rules, ia_only, metasploit, nuclei)
+	generate_output(ia_feed, et_suricata_rules, et_snort_rules, ia_only, metasploit, nuclei)
 }
