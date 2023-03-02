@@ -143,7 +143,7 @@ func generate_output(ia_feed map[string]ia, et_suricata_rules map[string]int, et
 	}
 
 	table := "|CVE|ET Suri|ET Snort|IA Suri|IA Snort|\n"
-	table += "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n"
+	table += "| --- | --- | --- | --- | --- |\n"
 	for _, cve := range map_keys {
 		table += cve
 		table += "|"
