@@ -12,3 +12,5 @@ The difference between an "invalid rule" and an "IA bypass" is that an "invalid 
 | CVE-2018-14867| Snort | |✔️ | | Hard-coded length |
 | CVE-2019-1652| Suricata | |✔️ | | Mistake reading pcap |
 | CVE-2019-1652| Snort | |✔️ | | Mistake reading pcap |
+| CVE-2019-1653| Suricata |✔️ | | | |
+| CVE-2019-1653| Snort | ✔️  | | |  |
