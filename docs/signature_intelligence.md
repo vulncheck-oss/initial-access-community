@@ -36,3 +36,4 @@ Status emojis:
 | CVE-2021-36260 | Snort |🔥| Space in xml |
 | CVE-2021-39144| Suricata |✔️| |
 | CVE-2021-39144| Snort |✔️| |
+| CVE-2021-41773| Suricata |🔥| Gap in rule coverage|
