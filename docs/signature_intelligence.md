@@ -40,3 +40,5 @@ Status emojis:
 | CVE-2021-41773| Snort |🔥| Gap in rule coverage|
 | CVE-2021-43798| Suricata |🔥| Overly restrictive search size|
 | CVE-2021-43798| Snort |🔥| Overly restrictive search size|
+| CVE-2021-44077| Suricata |🔥| Requires quotes|
+| CVE-2021-44077| Snort |🔥| Requires quotes|
