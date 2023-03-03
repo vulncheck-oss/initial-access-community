@@ -8,6 +8,8 @@ Status emojis:
 * 💔 = Rule is broken or only catches a specific exploit variant (e.g. hardcoded payload or something)
 * 🔥 = VulnCheck bypass
 
+*Caveat: I skipped Log4Shell.
+
 |CVE|Engine|Status| Note |
 | --- | --- | --- | --- |
 | CVE-2017-7577 | Suricata | ✔️| Only detects Account1 |
