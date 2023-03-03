@@ -30,3 +30,5 @@ Status emojis:
 | CVE-2021-1497 | Snort |💔| No URI payload support. Bad encoding assumptions.|
 | CVE-2021-1498 | Suricata |💔| No GET support. Only detects when ` is used.|
 | CVE-2021-1498 | Snort |💔| No GET support. Only detects when ` is used.|
+| CVE-2021-22205 | Suricata |💔| Mistake with URI |
+| CVE-2021-22205 | Snort |💔| Mistake with URI |
