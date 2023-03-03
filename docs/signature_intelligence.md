@@ -34,3 +34,5 @@ Status emojis:
 | CVE-2021-22205 | Snort |💔| Mistake with URI |
 | CVE-2021-36260 | Suricata |🔥| Space in xml |
 | CVE-2021-36260 | Snort |🔥| Space in xml |
+| CVE-2021-39144| Suricata |✔️| |
+| CVE-2021-39144| Snort |✔️| |
