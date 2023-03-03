@@ -37,3 +37,4 @@ Status emojis:
 | CVE-2021-39144| Suricata |✔️| |
 | CVE-2021-39144| Snort |✔️| |
 | CVE-2021-41773| Suricata |🔥| Gap in rule coverage|
+| CVE-2021-41773| Snort |🔥| Gap in rule coverage|
