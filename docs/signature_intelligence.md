@@ -5,7 +5,7 @@ The following table describes overlapping signatures that VulnCheck and Emerging
 Status emojis:
 
 * ✔️ = Successfully detects IA pcap
-* 💔 = Rule is broken or only catches a very specific exploit variant (e.g. hardcoded payload or something)
+* 💔 = Rule is broken or only catches a specific exploit variant (e.g. hardcoded payload or something)
 * 🔥 = VulnCheck bypass
 
 |CVE|Engine|Status| Note |
@@ -23,5 +23,6 @@ Status emojis:
 | CVE-2019-15107| Suricata |🔥| |
 | CVE-2019-15107| Snort |🔥| |
 | CVE-2020-7961 | Suricata |🔥| |
-| CVE-2020-7961 | Suricata |🔥| |
-
+| CVE-2020-7961 | Suricata |🔥| |2020-22253
+| CVE-2020-22253| Snort |💔| Only catches challenge/response variant |
+| CVE-2020-22253| Snort |💔| Only catches challenge/response variant |
