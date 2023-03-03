@@ -23,6 +23,8 @@ Status emojis:
 | CVE-2019-15107| Suricata |🔥| |
 | CVE-2019-15107| Snort |🔥| |
 | CVE-2020-7961 | Suricata |🔥| |
-| CVE-2020-7961 | Suricata |🔥| |2020-22253
+| CVE-2020-7961 | Snort |🔥| |
+| CVE-2020-22253| Suricata |💔| Only catches challenge/response variant |
 | CVE-2020-22253| Snort |💔| Only catches challenge/response variant |
-| CVE-2020-22253| Snort |💔| Only catches challenge/response variant |
+| CVE-2021-1497 | Suricata |💔| No URI payload support. Bad encoding assumptions. |
+| CVE-2021-1497 | Snort |💔| No URI payload support. Bad encoding assumptions.|
