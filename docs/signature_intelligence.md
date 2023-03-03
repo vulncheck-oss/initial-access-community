@@ -28,3 +28,5 @@ Status emojis:
 | CVE-2020-22253| Snort |💔| Only catches challenge/response variant |
 | CVE-2021-1497 | Suricata |💔| No URI payload support. Bad encoding assumptions. |
 | CVE-2021-1497 | Snort |💔| No URI payload support. Bad encoding assumptions.|
+| CVE-2021-1498 | Suricata |💔| No GET support. Only detects when ` is used.|
+| CVE-2021-1498 | Snort |💔| No GET support. Only detects when ` is used.|
