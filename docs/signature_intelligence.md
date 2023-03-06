@@ -50,3 +50,5 @@ Status emojis:
 | CVE-2022-0543| Snort |🔥| |
 | CVE-2022-1040| Suricata |💔| Does not detect actual exploitation |
 | CVE-2022-1040| Snort |💔| |
+| CVE-2022-1388| Suricata |🔥| Bad !|
+| CVE-2022-1388| Snort |🔥| Bad !|
