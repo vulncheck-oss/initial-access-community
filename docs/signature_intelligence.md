@@ -1,6 +1,6 @@
 # VulnCheck Signature Intelligence
 
-The following table describes overlapping signatures that VulnCheck and Emerging Threats have.
+The following table describes overlapping signatures that VulnCheck and Emerging Threats have. The goal of this document is to exactly which VulnCheck exploits that Emerging Threats can detect.
 
 Status emojis:
 
