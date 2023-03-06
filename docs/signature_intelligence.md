@@ -46,3 +46,5 @@ Status emojis:
 | CVE-2021-44077| Snort |🔥| Requires quotes|
 | CVE-2021-44515| Suricata |💔| Assumes payload is in URI |
 | CVE-2021-44515| Snort |💔| Assumes payload is in URI |
+| CVE-2022-0543| Suricata |🔥| |
+| CVE-2022-0543| Snort |🔥| |
