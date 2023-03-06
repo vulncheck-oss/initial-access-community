@@ -60,3 +60,5 @@ Status emojis:
 | CVE-2022-22965| Snort |✔️| |
 | CVE-2022-24112| Suricata |🔥| |
 | CVE-2022-24112| Snort |🔥| |
+| CVE-2022-24706| Suricata |💔| Hard-coded challenge response?|
+| CVE-2022-24706| Snort |💔| Hard-coded challenge response?|
