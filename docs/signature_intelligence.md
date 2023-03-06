@@ -44,3 +44,5 @@ Status emojis:
 | CVE-2021-43798| Snort |🔥| Overly restrictive search size|
 | CVE-2021-44077| Suricata |🔥| Requires quotes|
 | CVE-2021-44077| Snort |🔥| Requires quotes|
+| CVE-2021-44515| Suricata |💔| Assumes payload is in URI |
+| CVE-2021-44515| Snort |💔| Assumes payload is in URI |
