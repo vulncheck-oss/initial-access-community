@@ -68,3 +68,5 @@ Status emojis:
 | CVE-2022-26352| Snort|🔥||
 | CVE-2022-27925| Suricata |💔| Wrong URI|
 | CVE-2022-27925| Snort |💔| Wrong URI|
+| CVE-2022-29464| Suricata|🔥| Strict file upload path|
+| CVE-2022-29464| Snort|🔥|Strict file upload path|
