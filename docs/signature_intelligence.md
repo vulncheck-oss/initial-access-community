@@ -73,3 +73,5 @@ Status emojis:
 | CVE-2022-30525| Suricata|🔥| Double mtu |
 | CVE-2022-30525| Snort|🔥|Double mtu|
 | CVE-2022-35405| Suricata|🔥|Tab instead of a space|
+| CVE-2022-44877| Suricata|🔥| |
+| CVE-2022-44877| Snort|🔥||
