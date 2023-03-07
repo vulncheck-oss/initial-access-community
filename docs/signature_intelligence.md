@@ -62,3 +62,7 @@ Status emojis:
 | CVE-2022-24112| Snort |🔥| |
 | CVE-2022-24706| Suricata |💔| Hard-coded challenge response?|
 | CVE-2022-24706| Snort |💔| Hard-coded challenge response?|
+| CVE-2022-26259| Suricata |💔| Bad value in Cseq. Not sure this can use http either?|
+| CVE-2022-26259| Snort |💔| Bad value in Cseq|
+| CVE-2022-26352| Suricata|🔥||
+| CVE-2022-26352| Snort|🔥||
