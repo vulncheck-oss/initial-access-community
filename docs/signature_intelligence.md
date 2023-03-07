@@ -66,3 +66,5 @@ Status emojis:
 | CVE-2022-26259| Snort |💔| Bad value in Cseq|
 | CVE-2022-26352| Suricata|🔥||
 | CVE-2022-26352| Snort|🔥||
+| CVE-2022-27925| Suricata |💔| Wrong URI|
+| CVE-2022-27925| Snort |💔| Wrong URI|
