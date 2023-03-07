@@ -72,3 +72,4 @@ Status emojis:
 | CVE-2022-29464| Snort|🔥|Strict file upload path|
 | CVE-2022-30525| Suricata|🔥| Double mtu |
 | CVE-2022-30525| Snort|🔥|Double mtu|
+| CVE-2022-35405| Suricata|🔥|Tab instead of a space|
