@@ -1,8 +1,8 @@
 # Initial Access vs. Emerging Threats
-*Emerging Threats Suricata Coverage*: 991 / 1023  
-*Emerging Threats Snort Coverage*: 982 / 1023  
-*IA Suricata Signature Coverage*: 64 / 1023  
-*IA Snort Signature Coverage*: 59 / 1023  
+*Emerging Threats Suricata Coverage*: 991 / 1024  
+*Emerging Threats Snort Coverage*: 982 / 1024  
+*IA Suricata Signature Coverage*: 68 / 1024  
+*IA Snort Signature Coverage*: 63 / 1024  
   
 
 ## Coverage Table
@@ -53,15 +53,16 @@ CVE-2022-27226|✔️|✔️|||
 CVE-2022-26532|||||
 CVE-2022-26500|||✔️||
 CVE-2022-26352|✔️|✔️|✔️|✔️|
-CVE-2022-26318|✔️|✔️|||
+CVE-2022-26318|✔️|✔️|✔️|✔️|
 CVE-2022-26259|✔️|✔️|✔️||
 CVE-2022-26210|✔️|✔️|||
 CVE-2022-26186|✔️|✔️|||
+CVE-2022-26138|||✔️|✔️|
 CVE-2022-26134|||✔️|✔️|
 CVE-2022-25237|✔️|✔️|||
 CVE-2022-25075|✔️|✔️|||
 CVE-2022-25064|✔️|✔️|||
-CVE-2022-24990|✔️|✔️|||
+CVE-2022-24990|✔️|✔️|✔️|✔️|
 CVE-2022-24989|✔️|✔️|||
 CVE-2022-24706|✔️|✔️|✔️|✔️|
 CVE-2022-24112|✔️|✔️|✔️|✔️|
@@ -109,7 +110,7 @@ CVE-2021-41506|||✔️|✔️|
 CVE-2021-41314|✔️|✔️|||
 CVE-2021-41277|✔️|✔️|||
 CVE-2021-41163|✔️|✔️|||
-CVE-2021-40870|✔️|✔️|||
+CVE-2021-40870|✔️|✔️|✔️|✔️|
 CVE-2021-40539|✔️|✔️|||
 CVE-2021-40438|✔️|✔️|||
 CVE-2021-4039|✔️|✔️|||
