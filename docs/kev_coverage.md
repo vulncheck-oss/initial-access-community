@@ -5,10 +5,10 @@ The reason for that is there are a number of exploit chains that achieve unauth 
 *Total Initial-Access KEV Entries*: 343
     
 *Emerging Threats Coverage*: 287 / 343  
-*IA Suricata Signature Coverage*: 39 / 343  
-*IA Snort Signature Coverage*: 38 / 343  
-*IA Shodan Coverage*: 35 / 343  
-*IA Censys Coverage*: 33 / 343  
+*IA Suricata Signature Coverage*: 41 / 343  
+*IA Snort Signature Coverage*: 40 / 343  
+*IA Shodan Coverage*: 37 / 343  
+*IA Censys Coverage*: 35 / 343  
 *IA Exploit Coverage*: 34 / 343  
 *IA Version Scanner*: 27 / 343  
 *Metasploit*: 170 / 343  
@@ -18,7 +18,7 @@ The reason for that is there are a number of exploit chains that achieve unauth 
 ## Coverage Table
 |CVE|ET Suri|ET Snort|IA Suri|IA Snort|IA Shodan|IA Censys|IA Exploit|IA Scanner|Metasploit|Nuclei
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-CVE-2022-47986||||||||||✔️|
+CVE-2022-47986|||✔️|✔️|✔️|✔️||||✔️|
 CVE-2022-47966|✔️|✔️|✔️|✔️|✔️|✔️|✔️||✔️|✔️|
 CVE-2022-46169|✔️|✔️|✔️|✔️|✔️|✔️|✔️|✔️|✔️|✔️|
 CVE-2022-44877|✔️|✔️|✔️|✔️|✔️|✔️|✔️|✔️|✔️|✔️|
@@ -72,7 +72,7 @@ CVE-2021-42237|||✔️|✔️|✔️|✔️|✔️|✔️|✔️|✔️|
 CVE-2021-42013|✔️|✔️|||||||✔️|✔️|
 CVE-2021-41773|✔️|✔️|✔️|✔️|✔️|✔️|✔️|✔️|✔️|✔️|
 CVE-2021-40870|✔️|✔️|✔️|✔️|✔️|✔️||||✔️|
-CVE-2021-40539|✔️|✔️|||||||✔️|✔️|
+CVE-2021-40539|✔️|✔️|✔️|✔️|✔️|✔️|||✔️|✔️|
 CVE-2021-40438|✔️|✔️||||||||✔️|
 CVE-2021-39226||||||||||✔️|
 CVE-2021-38647|✔️|✔️|||||||✔️|✔️|
