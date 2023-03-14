@@ -5,10 +5,10 @@ The reason for that is there are a number of exploit chains that achieve unauth 
 *Total Initial-Access KEV Entries*: 343
     
 *Emerging Threats Coverage*: 287 / 343  
-*IA Suricata Signature Coverage*: 41 / 343  
-*IA Snort Signature Coverage*: 40 / 343  
-*IA Shodan Coverage*: 37 / 343  
-*IA Censys Coverage*: 35 / 343  
+*IA Suricata Signature Coverage*: 43 / 343  
+*IA Snort Signature Coverage*: 42 / 343  
+*IA Shodan Coverage*: 39 / 343  
+*IA Censys Coverage*: 37 / 343  
 *IA Exploit Coverage*: 34 / 343  
 *IA Version Scanner*: 27 / 343  
 *Metasploit*: 170 / 343  
@@ -79,14 +79,14 @@ CVE-2021-38647|✔️|✔️|||||||✔️|✔️|
 CVE-2021-37415|||||||||||
 CVE-2021-36260|✔️|✔️|✔️|✔️|✔️|✔️|✔️|✔️|✔️|✔️|
 CVE-2021-35587|✔️|✔️||||||||✔️|
-CVE-2021-35464|✔️|✔️|||||||✔️|✔️|
+CVE-2021-35464|✔️|✔️|✔️|✔️|✔️|✔️|||✔️|✔️|
 CVE-2021-35395|✔️|✔️|||||||||
 CVE-2021-35394|✔️|✔️|||||||||
 CVE-2021-35211|✔️|✔️|||||||||
 CVE-2021-34523|||||||||✔️||
 CVE-2021-34473|✔️|✔️|||||||✔️|✔️|
 CVE-2021-33766|✔️|✔️|||||||||
-CVE-2021-32648|✔️|✔️|||||||||
+CVE-2021-32648|✔️|✔️|✔️|✔️|✔️|✔️|||||
 CVE-2021-31755|✔️|✔️||||||||✔️|
 CVE-2021-31166|✔️|✔️|||||||✔️||
 CVE-2021-30116|||||||||||
