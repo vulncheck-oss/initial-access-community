@@ -1,8 +1,8 @@
 # Initial Access vs. Emerging Threats
 *Emerging Threats Suricata Coverage*: 991 / 1025  
 *Emerging Threats Snort Coverage*: 982 / 1025  
-*IA Suricata Signature Coverage*: 70 / 1025  
-*IA Snort Signature Coverage*: 65 / 1025  
+*IA Suricata Signature Coverage*: 72 / 1025  
+*IA Snort Signature Coverage*: 67 / 1025  
   
 
 ## Coverage Table
@@ -125,7 +125,7 @@ CVE-2021-36380|✔️|✔️|||
 CVE-2021-36356|✔️|✔️|||
 CVE-2021-36260|✔️|✔️|✔️|✔️|
 CVE-2021-35587|✔️|✔️|||
-CVE-2021-35464|✔️|✔️|||
+CVE-2021-35464|✔️|✔️|✔️|✔️|
 CVE-2021-35395|✔️|✔️|||
 CVE-2021-35394|✔️|✔️|||
 CVE-2021-35393|✔️|✔️|||
@@ -146,7 +146,7 @@ CVE-2021-33543|✔️|✔️|||
 CVE-2021-3317|✔️|✔️|||
 CVE-2021-3297|✔️|✔️|||
 CVE-2021-32706|✔️|✔️|||
-CVE-2021-32648|✔️|✔️|||
+CVE-2021-32648|✔️|✔️|✔️|✔️|
 CVE-2021-32305|✔️|✔️|||
 CVE-2021-31986|✔️|✔️|||
 CVE-2021-31755|✔️|✔️|||
