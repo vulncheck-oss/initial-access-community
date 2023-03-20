@@ -2,22 +2,23 @@
 The total number of "Initial Access" KEV entries includes all the traditional IA, plus credentialed IA and remote/unauth info leak.  
 The reason for that is there are a number of exploit chains that achieve unauth rce via infoleak+credentialed rce.  
   
-*Total Initial-Access KEV Entries*: 343
+*Total Initial-Access KEV Entries*: 344
     
-*Emerging Threats Coverage*: 287 / 343  
-*IA Suricata Signature Coverage*: 43 / 343  
-*IA Snort Signature Coverage*: 42 / 343  
-*IA Shodan Coverage*: 39 / 343  
-*IA Censys Coverage*: 37 / 343  
-*IA Exploit Coverage*: 34 / 343  
-*IA Version Scanner*: 27 / 343  
-*Metasploit*: 170 / 343  
-*Nuclei*: 137 / 343  
+*Emerging Threats Coverage*: 287 / 344  
+*IA Suricata Signature Coverage*: 46 / 344  
+*IA Snort Signature Coverage*: 45 / 344  
+*IA Shodan Coverage*: 42 / 344  
+*IA Censys Coverage*: 40 / 344  
+*IA Exploit Coverage*: 34 / 344  
+*IA Version Scanner*: 27 / 344  
+*Metasploit*: 170 / 344  
+*Nuclei*: 137 / 344  
   
 
 ## Coverage Table
 |CVE|ET Suri|ET Snort|IA Suri|IA Snort|IA Shodan|IA Censys|IA Exploit|IA Scanner|Metasploit|Nuclei
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+CVE-2023-23397|||||||||||
 CVE-2022-47986|||✔️|✔️|✔️|✔️||||✔️|
 CVE-2022-47966|✔️|✔️|✔️|✔️|✔️|✔️|✔️||✔️|✔️|
 CVE-2022-46169|✔️|✔️|✔️|✔️|✔️|✔️|✔️|✔️|✔️|✔️|
@@ -100,8 +101,8 @@ CVE-2021-26855|||||||||✔️|✔️|
 CVE-2021-26085|✔️|✔️||||||||✔️|
 CVE-2021-26084|||||||||✔️|✔️|
 CVE-2021-22991|✔️|✔️|||||||||
-CVE-2021-22986|✔️|✔️|||||||✔️|✔️|
-CVE-2021-22941|✔️|✔️|||||||||
+CVE-2021-22986|✔️|✔️|✔️|✔️|✔️|✔️|||✔️|✔️|
+CVE-2021-22941|✔️|✔️|✔️|✔️|✔️|✔️|||||
 CVE-2021-22893|✔️|✔️|||||||||
 CVE-2021-22506|||||||||||
 CVE-2021-22502|||||||||✔️||
@@ -121,7 +122,7 @@ CVE-2021-1871|||||||||||
 CVE-2021-1870|||||||||||
 CVE-2021-1498|✔️|✔️|✔️|✔️|✔️|✔️|✔️|✔️|✔️|✔️|
 CVE-2021-1497|✔️|✔️|✔️|✔️|✔️|✔️|✔️||✔️|✔️|
-CVE-2020-9054|✔️|✔️||||||||✔️|
+CVE-2020-9054|✔️|✔️|✔️|✔️|✔️|✔️||||✔️|
 CVE-2020-8657|✔️|✔️|||||||✔️||
 CVE-2020-8644|||||||||✔️|✔️|
 CVE-2020-8599|||||||||||
