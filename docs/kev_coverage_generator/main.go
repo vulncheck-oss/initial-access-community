@@ -302,7 +302,7 @@ func isIA(cve_json []byte) bool {
 		result = doCVSSv2(v2, userInter)
 	}
 
-	return result == InitialAccess || result == InfoLeak
+	return result == InitialAccess
 }
 
 func ia_filter(token string, kev_catalog map[string]int) (map[string]int, bool) {
