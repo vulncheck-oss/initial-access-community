@@ -5,10 +5,10 @@ The reason for that is there are a number of exploit chains that achieve unauth 
 *Total Initial-Access KEV Entries*: 308
     
 *Emerging Threats Coverage*: 265 / 308  
-*IA Suricata Signature Coverage*: 49 / 308  
-*IA Snort Signature Coverage*: 48 / 308  
-*IA Shodan Coverage*: 44 / 308  
-*IA Censys Coverage*: 42 / 308  
+*IA Suricata Signature Coverage*: 50 / 308  
+*IA Snort Signature Coverage*: 49 / 308  
+*IA Shodan Coverage*: 45 / 308  
+*IA Censys Coverage*: 43 / 308  
 *IA Exploit Coverage*: 32 / 308  
 *IA Version Scanner*: 25 / 308  
 *Metasploit*: 156 / 308  
@@ -89,7 +89,7 @@ CVE-2021-31166|✔️|✔️|||||||✔️||
 CVE-2021-30116|||||||||||
 CVE-2021-28799|||||||||||
 CVE-2021-27852|||||||||||
-CVE-2021-27561|✔️|✔️||||||||✔️|
+CVE-2021-27561|✔️|✔️|✔️|✔️|✔️|✔️||||✔️|
 CVE-2021-27104|||||||||||
 CVE-2021-27103|||||||||||
 CVE-2021-27101|||||||||||
