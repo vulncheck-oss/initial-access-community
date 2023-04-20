@@ -1,19 +1,22 @@
 # Initial Access vs. Emerging Threats
-*Emerging Threats Suricata Coverage*: 994 / 1034  
-*Emerging Threats Snort Coverage*: 985 / 1034  
-*IA Suricata Signature Coverage*: 86 / 1034  
-*IA Snort Signature Coverage*: 81 / 1034  
+*Emerging Threats Suricata Coverage*: 994 / 1036  
+*Emerging Threats Snort Coverage*: 986 / 1036  
+*IA Suricata Signature Coverage*: 89 / 1036  
+*IA Snort Signature Coverage*: 84 / 1036  
   
 
 ## Coverage Table
 |CVE|ET Suri|ET Snort|IA Suri|IA Snort|
 | --- | --- | --- | --- | --- |
 CVE-2023-28432|||✔️|✔️|
+CVE-2023-28343|✔️|✔️|||
 CVE-2023-23752|||✔️|✔️|
 CVE-2023-23397|✔️|✔️|||
 CVE-2023-22952|||✔️|✔️|
+CVE-2023-21839|||✔️|✔️|
 CVE-2023-20026|||✔️|✔️|
 CVE-2023-20025|||✔️|✔️|
+CVE-2023-1671|||✔️|✔️|
 CVE-2023-1389|✔️|✔️|||
 CVE-2023-0669|✔️|✔️|✔️|✔️|
 CVE-2022-48323|✔️|✔️|||
@@ -74,7 +77,7 @@ CVE-2022-24112|✔️|✔️|✔️|✔️|
 CVE-2022-23131|✔️|✔️|||
 CVE-2022-22965|||✔️|✔️|
 CVE-2022-22963|✔️|✔️|✔️|✔️|
-CVE-2022-22954|✔️|✔️|||
+CVE-2022-22954|✔️|✔️|✔️|✔️|
 CVE-2022-22947|✔️|✔️|✔️|✔️|
 CVE-2022-22536|✔️|✔️|||
 CVE-2022-22246|✔️|✔️|||
@@ -276,7 +279,6 @@ CVE-2020-1938|✔️|✔️|||
 CVE-2020-17530|✔️|✔️|||
 CVE-2020-17456|✔️|✔️|||
 CVE-2020-17143|✔️|✔️|||
-CVE-2020-17141|✔️||||
 CVE-2020-17132|✔️|✔️|||
 CVE-2020-16846|✔️||||
 CVE-2020-16152|✔️|✔️|||
