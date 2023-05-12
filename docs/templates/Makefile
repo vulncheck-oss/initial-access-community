@@ -11,8 +11,8 @@ exploit_os := $(shell go env GOOS)
 exploit_arch := $(shell go env GOARCH)
 
 # NOTE: Don't forget to update these variables
-payload_os := windows
-payload_arch := amd64
+payload_oses := linux windows
+payload_archs := amd64 arm64
 
 # Output directory for binaries
 output_dir := build
@@ -23,24 +23,23 @@ format:
 	gofmt -d -w $(exploit_files) $(payload_files)
 
 lint:
-	$(foreach exploit_file,$(exploit_files),golangci-lint run --fix $(exploit_file);)
+	$(foreach file,$(exploit_files),golangci-lint run --fix $(file);)
 ifneq ($(payload_files),)
-	$(foreach payload_file,$(payload_files),golangci-lint run --fix $(payload_file);)
+	$(foreach file,$(payload_files),golangci-lint run --fix $(file);)
 endif
 
 compile: exploit payload
 	find $(output_dir)/*
 
-exploit: suffix = $(if $(findstring windows,$(exploit_os)),.exe)
+exploit: ext = $(if $(findstring windows,$(exploit_os)),.exe)
 exploit:
-	$(foreach exploit_file,$(exploit_files),GOOS=$(exploit_os) GOARCH=$(exploit_arch) \
-		go build -o $(output_dir)/$(exploit_file:.go=)_$(exploit_os)-$(exploit_arch)$(suffix) $(exploit_file);)
+	$(foreach file,$(exploit_files),GOOS=$(exploit_os) GOARCH=$(exploit_arch) \
+		go build -o $(output_dir)/$(file:.go=)_$(exploit_os)-$(exploit_arch)$(ext) $(file);)
 
-payload: suffix = $(if $(findstring windows,$(payload_os)),.exe)
 payload:
 ifneq ($(payload_files),)
-	$(foreach payload_file,$(payload_files),GOOS=$(payload_os) GOARCH=$(payload_arch) \
-		go build -o $(output_dir)/$(payload_file:.go=)_$(payload_os)-$(payload_arch)$(suffix) $(payload_file);)
+	$(foreach file,$(payload_files),$(foreach os,$(payload_oses),$(foreach arch,$(payload_archs),GOOS=$(os) GOARCH=$(arch) \
+		go build -o $(output_dir)/$(file:.go=)_$(os)-$(arch)$(if $(findstring windows,$(os)),.exe) $(file);)))
 endif
 
 clean:
