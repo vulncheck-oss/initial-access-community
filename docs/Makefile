@@ -43,7 +43,7 @@ ifneq ($(payload_files),)
 endif
 
 clean:
-	rm -rf $(output_dir)
+	rm -rfv $(output_dir)
 
 # GOOS=darwin GOARCH=amd64
 darwin-amd64: exploit_os := darwin
