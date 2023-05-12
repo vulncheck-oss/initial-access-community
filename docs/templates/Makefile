@@ -29,7 +29,7 @@ ifneq ($(payload_files),)
 endif
 
 compile: exploit payload extra
-	find $(output_dir)/*
+	@find $(output_dir)/*
 
 exploit: ext = $(if $(findstring windows,$(exploit_os)),.exe)
 exploit:
@@ -46,7 +46,7 @@ endif
 extra:
 
 clean:
-	rm -rfv $(output_dir)
+	@rm -rfv $(output_dir)
 
 # GOOS=darwin GOARCH=amd64
 darwin-amd64: exploit_os := darwin
