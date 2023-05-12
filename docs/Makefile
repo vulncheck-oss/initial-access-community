@@ -20,7 +20,7 @@ output_dir := build
 all: format lint compile
 
 format:
-	go fmt
+	gofmt -d -w $(exploit_files) $(payload_files)
 
 lint:
 	$(foreach exploit_file,$(exploit_files),golangci-lint run --fix $(exploit_file);)
