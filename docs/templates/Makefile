@@ -29,6 +29,7 @@ ifneq ($(payload_files),)
 endif
 
 compile: exploit payload
+	find $(output_dir)/*
 
 exploit: suffix = $(if $(findstring windows,$(exploit_os)),.exe)
 exploit:
