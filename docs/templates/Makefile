@@ -28,7 +28,7 @@ ifneq ($(payload_files),)
 	$(foreach file,$(payload_files),golangci-lint run --fix $(file);)
 endif
 
-compile: exploit payload
+compile: exploit payload extra
 	find $(output_dir)/*
 
 exploit: ext = $(if $(findstring windows,$(exploit_os)),.exe)
@@ -41,6 +41,9 @@ ifneq ($(payload_files),)
 	$(foreach file,$(payload_files),$(foreach os,$(payload_oses),$(foreach arch,$(payload_archs),GOOS=$(os) GOARCH=$(arch) \
 		go build -o $(output_dir)/$(file:.go=)_$(os)-$(arch)$(if $(findstring windows,$(os)),.exe) $(file);)))
 endif
+
+# Add extra stuff to this recipe
+extra:
 
 clean:
 	rm -rfv $(output_dir)
