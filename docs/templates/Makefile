@@ -39,7 +39,7 @@ exploit:
 payload:
 ifneq ($(payload_files),)
 	$(foreach file,$(payload_files),$(foreach os,$(payload_oses),$(foreach arch,$(payload_archs),GOOS=$(os) GOARCH=$(arch) \
-		go build -o $(output_dir)/$(file:.go=)_$(os)-$(arch)$(if $(findstring windows,$(os)),.exe) $(file);)))
+		go build -ldflags "-s -w" -o $(output_dir)/$(file:.go=)_$(os)-$(arch)$(if $(findstring windows,$(os)),.exe) $(file);)))
 endif
 
 # Add extra stuff to this recipe
