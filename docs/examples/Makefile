@@ -36,6 +36,7 @@ exploit:
 	$(foreach file,$(exploit_files),GOOS=$(exploit_os) GOARCH=$(exploit_arch) \
 		go build -o $(output_dir)/$(file:.go=)_$(exploit_os)-$(exploit_arch)$(ext) $(file);)
 
+payload: export GOARM := 7 # Change this value if you need to
 payload:
 ifneq ($(payload_files),)
 	$(foreach file,$(payload_files),$(foreach os,$(payload_oses),$(foreach arch,$(payload_archs),GOOS=$(os) GOARCH=$(arch) \
