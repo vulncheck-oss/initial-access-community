@@ -12,7 +12,7 @@ exploit_arch := $(shell go env GOARCH)
 
 # NOTE: Don't forget to update these variables
 payload_oses := linux windows
-payload_archs := amd64 arm64
+payload_archs := amd64 arm arm64
 
 # Output directory for binaries
 output_dir := build
