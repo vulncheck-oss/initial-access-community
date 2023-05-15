@@ -35,7 +35,6 @@ ifneq ($(payload_files),)
 endif
 
 compile: exploit payload extra
-	@ls -l $(output_dir)/*
 
 exploit: ext = $(if $(findstring windows,$(exploit_os)),.exe)
 exploit:
