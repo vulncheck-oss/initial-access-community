@@ -38,15 +38,20 @@ compile: exploit payload extra
 
 exploit: ext = $(if $(findstring windows,$(exploit_os)),.exe)
 exploit:
-	$(foreach file,$(exploit_files),GOOS=$(exploit_os) GOARCH=$(exploit_arch) \
-		go build -o $(output_dir)/$(file:.go=)_$(exploit_os)-$(exploit_arch)$(ext) $(file)$(newline))
+	$(foreach file,$(exploit_files),\
+		$(eval out := $(output_dir)/$(file:.go=)_$(exploit_os)-$(exploit_arch)$(ext))\
+			GOOS=$(exploit_os) GOARCH=$(exploit_arch) go build -o $(out) $(file)$(newline))
 
 # Change this value if you need to
 payload: export GOARM := 7
 payload:
 ifneq ($(payload_files),)
-	$(foreach file,$(payload_files),$(foreach os,$(payload_oses),$(foreach arch,$(payload_archs),GOOS=$(os) GOARCH=$(arch) \
-		go build -ldflags "-s -w" -o $(output_dir)/$(file:.go=)_$(os)-$(arch)$(if $(findstring windows,$(os)),.exe) $(file)$(newline))))
+	$(foreach file,$(payload_files),\
+		$(foreach os,$(payload_oses),\
+			$(foreach arch,$(payload_archs),\
+				$(eval ext := $(if $(findstring windows,$(os)),.exe))\
+				$(eval out := $(output_dir)/$(file:.go=)_$(os)-$(arch)$(ext))\
+					GOOS=$(os) GOARCH=$(arch) go build -ldflags "-s -w" -o $(out) $(file)$(newline))))
 endif
 
 # Add extra stuff to this recipe
