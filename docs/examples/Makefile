@@ -63,14 +63,14 @@ clean:
 # make darwin-amd64|darwin-arm64|...
 darwin-%:
 # HACK: Reinvoke make to pass in vars
-	@make --no-print-directory exploit_os=darwin exploit_arch=$*
+	@$(MAKE) --no-print-directory exploit_os=darwin exploit_arch=$*
 
 # make linux-amd64|linux-arm64|...
 linux-%:
 # HACK: Reinvoke make to pass in vars
-	@make --no-print-directory exploit_os=linux exploit_arch=$*
+	@$(MAKE) --no-print-directory exploit_os=linux exploit_arch=$*
 
 # make windows-amd64|windows-arm64|...
 windows-%:
 # HACK: Reinvoke make to pass in vars
-	@make --no-print-directory exploit_os=windows exploit_arch=$*
+	@$(MAKE) --no-print-directory exploit_os=windows exploit_arch=$*
