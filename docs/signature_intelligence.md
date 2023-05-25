@@ -1,23 +1,30 @@
 # Initial Access vs. Emerging Threats
-*Emerging Threats Suricata Coverage*: 995 / 1040  
-*Emerging Threats Snort Coverage*: 987 / 1040  
-*IA Suricata Signature Coverage*: 94 / 1040  
-*IA Snort Signature Coverage*: 89 / 1040  
+*Emerging Threats Suricata Coverage*: 999 / 1047  
+*Emerging Threats Snort Coverage*: 991 / 1047  
+*IA Suricata Signature Coverage*: 98 / 1047  
+*IA Snort Signature Coverage*: 92 / 1047  
   
 
 ## Coverage Table
 |CVE|ET Suri|ET Snort|IA Suri|IA Snort|
 | --- | --- | --- | --- | --- |
+CVE-2023-29489|✔️|✔️|||
+CVE-2023-28771|||✔️||
 CVE-2023-28432|||✔️|✔️|
 CVE-2023-28343|✔️|✔️|✔️|✔️|
+CVE-2023-27855|||✔️|✔️|
 CVE-2023-27351|||✔️|✔️|
 CVE-2023-27350|✔️|✔️|✔️|✔️|
 CVE-2023-26360|||✔️|✔️|
 CVE-2023-26340|||✔️|✔️|
+CVE-2023-25717|✔️|✔️|✔️|✔️|
+CVE-2023-24749|✔️|✔️|||
 CVE-2023-23752|||✔️|✔️|
 CVE-2023-23397|✔️|✔️|||
 CVE-2023-22952|||✔️|✔️|
+CVE-2023-21932|✔️|✔️|||
 CVE-2023-21839|||✔️|✔️|
+CVE-2023-20864|||✔️|✔️|
 CVE-2023-20026|||✔️|✔️|
 CVE-2023-20025|||✔️|✔️|
 CVE-2023-1671|||✔️|✔️|
