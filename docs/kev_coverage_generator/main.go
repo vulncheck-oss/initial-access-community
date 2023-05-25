@@ -283,7 +283,7 @@ func get_nuclei(kev map[string]int) (map[string]int, bool) {
 }
 
 func isIA(cve_json []byte) bool {
-	entry_json, _, _, err := jsonparser.Get(cve_json, "results", "[0]")
+	entry_json, _, _, err := jsonparser.Get(cve_json, "results", "[0]", "[0]")
 	if err != nil {
 		return false
 	}
@@ -295,7 +295,7 @@ func isIA(cve_json []byte) bool {
 	} else {
 		v2, _, _, err := jsonparser.Get(entry_json, "impact", "baseMetricV2", "cvssV2")
 		if err != nil {
-			// fmt.Println("Failed to parse v2: " + string(cve_json))
+			//fmt.Println("Failed to parse v2: " + string(entry_json))
 			return false
 		}
 		userInter, _ := jsonparser.GetBoolean(entry_json, "impact", "baseMetricV2", "userInteractionRequired")
@@ -310,7 +310,7 @@ func ia_filter(token string, kev_catalog map[string]int) (map[string]int, bool) 
 	for cve := range kev_catalog {
 		vuln_json, result := fetch_vulnerability(token, cve)
 		if !result {
-			//fmt.Printf("[-] Failed to fetch %s\n", cve)
+			fmt.Printf("[-] Failed to fetch %s\n", cve)
 			return cve_map, false
 		}
 
