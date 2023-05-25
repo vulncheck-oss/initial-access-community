@@ -1,6 +1,5 @@
-# Don't touch these variables
+# Don't touch this variable
 export GO111MODULE := on
-export GOPRIVATE := github.com/vulncheck-oss
 
 # HACK: "Detect" exploit and payload filenames
 exploit_files := $(wildcard cve-*.go)
