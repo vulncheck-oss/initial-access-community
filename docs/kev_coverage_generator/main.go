@@ -283,7 +283,7 @@ func get_nuclei(kev map[string]int) (map[string]int, bool) {
 }
 
 func isIA(cve_json []byte) bool {
-	entry_json, _, _, err := jsonparser.Get(cve_json, "results", "[0]", "[0]")
+	entry_json, _, _, err := jsonparser.Get(cve_json, "results", "[0]")
 	if err != nil {
 		return false
 	}
