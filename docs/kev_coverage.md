@@ -2,17 +2,17 @@
 The total number of "Initial Access" KEV entries includes all the traditional IA, plus credentialed IA and remote/unauth info leak.  
 The reason for that is there are a number of exploit chains that achieve unauth rce via infoleak+credentialed rce.  
   
-*Total Initial-Access KEV Entries*: 327
+*Total Initial-Access KEV Entries*: 328
     
-*Emerging Threats Coverage*: 281 / 327  
-*IA Suricata Signature Coverage*: 52 / 327  
-*IA Snort Signature Coverage*: 50 / 327  
-*IA Shodan Coverage*: 47 / 327  
-*IA Censys Coverage*: 46 / 327  
-*IA Exploit Coverage*: 34 / 327  
-*IA Version Scanner*: 25 / 327  
-*Metasploit*: 163 / 327  
-*Nuclei*: 127 / 327  
+*Emerging Threats Coverage*: 281 / 328  
+*IA Suricata Signature Coverage*: 55 / 328  
+*IA Snort Signature Coverage*: 53 / 328  
+*IA Shodan Coverage*: 50 / 328  
+*IA Censys Coverage*: 49 / 328  
+*IA Exploit Coverage*: 35 / 328  
+*IA Version Scanner*: 26 / 328  
+*Metasploit*: 164 / 328  
+*Nuclei*: 127 / 328  
   
 
 ## Coverage Table
@@ -82,7 +82,7 @@ CVE-2021-44026|||||||||||
 CVE-2021-42258|||||||||✔️|✔️|
 CVE-2021-42237|||✔️|✔️|✔️|✔️|✔️|✔️|✔️|✔️|
 CVE-2021-42013|✔️|✔️|||||||✔️|✔️|
-CVE-2021-40870|✔️|✔️||||||||✔️|
+CVE-2021-40870|✔️|✔️|✔️|✔️|✔️|✔️||||✔️|
 CVE-2021-40539|✔️|✔️|✔️|✔️|✔️|✔️|||✔️|✔️|
 CVE-2021-40438|✔️|✔️||||||||✔️|
 CVE-2021-39226||||||||||✔️|
@@ -141,7 +141,7 @@ CVE-2020-6287|✔️|✔️|✔️|✔️|✔️|✔️|||✔️|✔️|
 CVE-2020-6207|||||||||✔️|✔️|
 CVE-2020-5902|✔️|✔️|✔️|✔️|✔️|✔️|||✔️|✔️|
 CVE-2020-5847|||✔️|✔️|✔️|✔️|||✔️|✔️|
-CVE-2020-5722|||||||||✔️||
+CVE-2020-5722|||✔️|✔️|✔️|✔️|✔️|✔️|✔️||
 CVE-2020-5135|||||||||||
 CVE-2020-4427|||||||||✔️||
 CVE-2020-3992|||||||||||
@@ -197,6 +197,7 @@ CVE-2019-2725|||||||||✔️|✔️|
 CVE-2019-2616|✔️|✔️||||||||✔️|
 CVE-2019-19781|✔️|✔️|||||||✔️|✔️|
 CVE-2019-18935|✔️|✔️|||||||✔️||
+CVE-2019-17621|||✔️|✔️|✔️|✔️|||✔️||
 CVE-2019-16928|✔️|✔️|||||||||
 CVE-2019-16920|✔️|✔️||||||||✔️|
 CVE-2019-16759|||||||||✔️|✔️|
