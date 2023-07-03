@@ -18,7 +18,8 @@ type ia struct {
 
 func get_ia_json(token string) (map[string]ia, bool) {
 	cve_map := make(map[string]ia)
-	req, _ := http.NewRequest("GET", "https://api.vulncheck.com/v3/index/initial-access", nil)
+	// broken when we exceed 1000
+	req, _ := http.NewRequest("GET", "https://api.vulncheck.com/v3/index/initial-access?limit=1000", nil)
 	req.Header.Add("Authorization", "Bearer "+token)
 
 	client := &http.Client{}
@@ -31,7 +32,6 @@ func get_ia_json(token string) (map[string]ia, bool) {
 	defer resp.Body.Close()
 	body_bytes, _ := io.ReadAll(resp.Body)
 
-	// TODO when IA exceeds 100, we'll have to handle paging.
 	json, _, _, _ := jsonparser.Get(body_bytes, "data")
 	_, _ = jsonparser.ArrayEach(json, func(value []byte, dataType jsonparser.ValueType, offset int, err error) {
 		cve, _ := jsonparser.GetString(value, "cve")
