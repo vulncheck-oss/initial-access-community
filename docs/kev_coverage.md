@@ -5,20 +5,20 @@ The reason for that is there are a number of exploit chains that achieve unauth 
 *Total Initial-Access KEV Entries*: 328
     
 *Emerging Threats Coverage*: 281 / 328  
-*IA Suricata Signature Coverage*: 55 / 328  
-*IA Snort Signature Coverage*: 53 / 328  
+*IA Suricata Signature Coverage*: 56 / 328  
+*IA Snort Signature Coverage*: 54 / 328  
 *IA Shodan Coverage*: 50 / 328  
 *IA Censys Coverage*: 49 / 328  
-*IA Exploit Coverage*: 35 / 328  
-*IA Version Scanner*: 26 / 328  
+*IA Exploit Coverage*: 36 / 328  
+*IA Version Scanner*: 27 / 328  
 *Metasploit*: 164 / 328  
-*Nuclei*: 127 / 328  
+*Nuclei*: 129 / 328  
   
 
 ## Coverage Table
 |CVE|ET Suri|ET Snort|IA Suri|IA Snort|IA Shodan|IA Censys|IA Exploit|IA Scanner|Metasploit|Nuclei
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-CVE-2023-34362|✔️|✔️|||✔️|✔️|||✔️||
+CVE-2023-34362|✔️|✔️|✔️|✔️|✔️|✔️|✔️|✔️|✔️|✔️|
 CVE-2023-33010|||||||||||
 CVE-2023-33009|||||||||||
 CVE-2023-29492|||||||||||
@@ -223,7 +223,7 @@ CVE-2018-7600|✔️|✔️|||||||✔️|✔️|
 CVE-2018-7445|||||||||||
 CVE-2018-6961|✔️|✔️|||||||||
 CVE-2018-6789|✔️|✔️|||||||||
-CVE-2018-6530|||||||||||
+CVE-2018-6530||||||||||✔️|
 CVE-2018-5002|||||||||||
 CVE-2018-4939|||||||||||
 CVE-2018-4878|✔️|✔️|||||||||
