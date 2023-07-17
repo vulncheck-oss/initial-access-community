@@ -22,6 +22,10 @@ define newline
 
 endef
 
+ifndef exploit_files
+$(error You haven't written any exploit code)
+endif
+
 all: format lint compile
 
 format:
