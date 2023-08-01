@@ -282,6 +282,28 @@ func get_nuclei(kev map[string]int) (map[string]int, bool) {
 	return cve_map, true
 }
 
+func get_greynoise(kev map[string]int) (map[string]int, bool) {
+	cve_map := make(map[string]int)
+	resp, err := http.Get("https://viz.greynoise.io/gn-api/greynoise/v2/meta/metadata")
+	if err != nil {
+		fmt.Println("[-] GreyNoise download failed.")
+		return cve_map, false
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, _ := io.ReadAll(resp.Body)
+	_, _ = jsonparser.ArrayEach(bodyBytes, func(entry []byte, dataType jsonparser.ValueType, offset int, err error) {
+		_, _ = jsonparser.ArrayEach(entry, func(cve []byte, dataType jsonparser.ValueType, offset int, err error) {
+			cveStr := string(cve)
+			if kev[cveStr] == 1 {
+				cve_map[cveStr] = 1
+			}
+		}, "cves")
+	}, "metadata")
+
+	return cve_map, true
+}
+
 func isIA(cve_json []byte) bool {
 	entry_json, _, _, err := jsonparser.Get(cve_json, "results", "[0]")
 	if err != nil {
@@ -323,7 +345,7 @@ func ia_filter(token string, kev_catalog map[string]int) (map[string]int, bool) 
 	return cve_map, true
 }
 
-func generate_output(ia_feed map[string]ia, et_suricata_rules map[string]int, et_snort_rules map[string]int, kev map[string]int, metasploit map[string]int, nuclei map[string]int) {
+func generate_output(ia_feed map[string]ia, et_suricata_rules map[string]int, et_snort_rules map[string]int, kev map[string]int, metasploit map[string]int, nuclei map[string]int, greynoise map[string]int) {
 	fmt.Println("# KEV Measurements")
 
 	et_for_kev := 0
@@ -335,6 +357,7 @@ func generate_output(ia_feed map[string]ia, et_suricata_rules map[string]int, et
 	ia_version_scanner := 0
 	metasploit_coverage := 0
 	nuclei_coverage := 0
+	greynoise_coverage := 0
 
 	// sort the kev entries
 	kev_keys := make([]string, 0, len(kev))
@@ -348,8 +371,8 @@ func generate_output(ia_feed map[string]ia, et_suricata_rules map[string]int, et
 		kev_keys[i], kev_keys[j] = kev_keys[j], kev_keys[i]
 	}
 
-	table := "|CVE|ET Suri|ET Snort|IA Suri|IA Snort|IA Shodan|IA Censys|IA Exploit|IA Scanner|Metasploit|Nuclei\n"
-	table += "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n"
+	table := "|CVE|ET Suri|ET Snort|IA Suri|IA Snort|IA Shodan|IA Censys|IA Exploit|IA Scanner|Metasploit|Nuclei|GreyNoise|\n"
+	table += "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |\n"
 	for _, cve := range kev_keys {
 		table += cve
 		table += "|"
@@ -431,6 +454,14 @@ func generate_output(ia_feed map[string]ia, et_suricata_rules map[string]int, et
 		} else {
 			table += "|"
 		}
+
+		_, ok = greynoise[cve]
+		if ok {
+			table += "✔️|"
+			greynoise_coverage += 1
+		} else {
+			table += "|"
+		}
 		table += "\n"
 	}
 
@@ -447,6 +478,7 @@ func generate_output(ia_feed map[string]ia, et_suricata_rules map[string]int, et
 	fmt.Printf("*IA Version Scanner*: %d / %d  \n", ia_version_scanner, len(kev))
 	fmt.Printf("*Metasploit*: %d / %d  \n", metasploit_coverage, len(kev))
 	fmt.Printf("*Nuclei*: %d / %d  \n", nuclei_coverage, len(kev))
+	fmt.Printf("*GreyNoise*: %d / %d  \n", greynoise_coverage, len(kev))
 	fmt.Println("  ")
 	fmt.Println("\n## Coverage Table")
 	fmt.Println(table)
@@ -498,5 +530,10 @@ func main() {
 		return
 	}
 
-	generate_output(ia_feed, et_suricata_rules, et_snort_rules, ia_only, metasploit, nuclei)
+	greynoise, ok := get_greynoise(ia_only)
+	if !ok {
+		return
+	}
+
+	generate_output(ia_feed, et_suricata_rules, et_snort_rules, ia_only, metasploit, nuclei, greynoise)
 }
