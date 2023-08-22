@@ -82,6 +82,8 @@ Status emojis:
 |CVE-2022-46169|Snort|🔥||
 |CVE-2022-47966|Suricata|💔||
 |CVE-2022-47966|Snort|💔||
+|CVE-2023-3519|Suricata|🔥|Mixed-case strings|
+|CVE-2023-3519|Snort|🔥|Mixed-case strings|
 |CVE-2023-34362|Suricata|🤷|Mixed-case strings|
 |CVE-2023-34362|Snort|🤷|Mixed-case strings|
 |CVE-2023-34960|Suricata|💔|Hard-coded requirement for `.ppt|
