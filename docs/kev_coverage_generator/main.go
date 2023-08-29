@@ -3,12 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/buger/jsonparser"
 	"io"
 	"net/http"
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/buger/jsonparser"
 )
 
 type VulnType int
@@ -103,7 +104,7 @@ func fetch_vulnerability(token string, vulnerability string) ([]byte, bool) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("[-] Failed client creation")
+		output.PrintError("Failed client creation")
 		return nil, false
 	}
 
@@ -121,7 +122,7 @@ func get_ia_json(token string) (map[string]ia, bool) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("[-] Failed client creation")
+		output.PrintError("Failed client creation")
 		return nil, false
 	}
 
@@ -150,7 +151,7 @@ func get_emerging_threat_suricata_rules() (map[string]int, bool) {
 	cve_map := make(map[string]int)
 	resp, err := http.Get("https://rules.emergingthreats.net/open/suricata-6.0/emerging-all.rules")
 	if err != nil {
-		fmt.Println("[-] ET rules download failed.")
+		output.PrintError("ET rules download failed.")
 		return cve_map, false
 	}
 	defer resp.Body.Close()
@@ -182,7 +183,7 @@ func get_emerging_threat_snort_rules() (map[string]int, bool) {
 	cve_map := make(map[string]int)
 	resp, err := http.Get("https://rules.emergingthreats.net/open/snort-2.9.0/emerging-all.rules")
 	if err != nil {
-		fmt.Println("[-] ET rules download failed.")
+		output.PrintError("ET rules download failed.")
 		return cve_map, false
 	}
 	defer resp.Body.Close()
@@ -214,7 +215,7 @@ func get_kev_catalog() (map[string]int, bool) {
 	cve_map := make(map[string]int)
 	resp, err := http.Get("https://www.cisa.gov/sites/default/files/csv/known_exploited_vulnerabilities.csv")
 	if err != nil {
-		fmt.Println("[-] KEV download failed.")
+		output.PrintError("KEV download failed.")
 		return cve_map, false
 	}
 	defer resp.Body.Close()
@@ -240,7 +241,7 @@ func get_metasploit(kev map[string]int) (map[string]int, bool) {
 	cve_map := make(map[string]int)
 	resp, err := http.Get("https://raw.githubusercontent.com/rapid7/metasploit-framework/master/db/modules_metadata_base.json")
 	if err != nil {
-		fmt.Println("[-] Metasploit download failed.")
+		output.PrintError("Metasploit download failed.")
 		return cve_map, false
 	}
 	defer resp.Body.Close()
@@ -264,7 +265,7 @@ func get_nuclei(kev map[string]int) (map[string]int, bool) {
 	cve_map := make(map[string]int)
 	resp, err := http.Get("https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/cves.json")
 	if err != nil {
-		fmt.Println("[-] Nuclei download failed.")
+		output.PrintError("Nuclei download failed.")
 		return cve_map, false
 	}
 	defer resp.Body.Close()
@@ -286,7 +287,7 @@ func get_greynoise(kev map[string]int) (map[string]int, bool) {
 	cve_map := make(map[string]int)
 	resp, err := http.Get("https://viz.greynoise.io/gn-api/greynoise/v2/meta/metadata")
 	if err != nil {
-		fmt.Println("[-] GreyNoise download failed.")
+		output.PrintError("GreyNoise download failed.")
 		return cve_map, false
 	}
 	defer resp.Body.Close()
