@@ -26,7 +26,7 @@ func get_ia_json(token string) (map[string]ia, bool) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		output.PrintError("Failed client creation")
+		fmt.Println("Failed client creation")
 		return nil, false
 	}
 
@@ -51,7 +51,7 @@ func get_emerging_threat_suricata_rules() (map[string]int, bool) {
 	cve_map := make(map[string]int)
 	resp, err := http.Get("https://rules.emergingthreats.net/open/suricata-6.0/emerging-all.rules")
 	if err != nil {
-		output.PrintError("ET rules download failed.")
+		fmt.Println("ET rules download failed.")
 		return cve_map, false
 	}
 	defer resp.Body.Close()
@@ -83,7 +83,7 @@ func get_emerging_threat_snort_rules() (map[string]int, bool) {
 	cve_map := make(map[string]int)
 	resp, err := http.Get("https://rules.emergingthreats.net/open/snort-2.9.0/emerging-all.rules")
 	if err != nil {
-		output.PrintError("ET rules download failed.")
+		fmt.Println("ET rules download failed.")
 		return cve_map, false
 	}
 	defer resp.Body.Close()
