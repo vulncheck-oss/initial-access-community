@@ -39,6 +39,8 @@ Status emojis:
 |CVE-2021-36260|Snort|🔥|Space in xml|
 |CVE-2021-39144|Suricata|✔️|Bypass TODO: Hardcoded space between method and URI|
 |CVE-2021-39144|Snort|✔️|Bypass TODO: Hardcoded space between method and URI|
+|CVE-2021-40539|Suricata|🔥|Various|
+|CVE-2021-40539|Snort|🔥|Various|
 |CVE-2021-41773|Suricata|🔥|Gap in rule coverage|
 |CVE-2021-41773|Snort|🔥|Gap in rule coverage|
 |CVE-2021-43798|Suricata|🔥|Overly restrictive search size|
