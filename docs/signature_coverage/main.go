@@ -150,7 +150,7 @@ func generate_output(ia_feed map[string]ia, et_suricata_rules map[string]int, et
 		table += "|"
 		_, ok := et_suricata_rules[cve]
 		if ok {
-			table += "✔️|"
+			table += "✅|"
 			et_suri_sig += 1
 		} else {
 			table += "|"
@@ -158,7 +158,7 @@ func generate_output(ia_feed map[string]ia, et_suricata_rules map[string]int, et
 
 		_, ok = et_snort_rules[cve]
 		if ok {
-			table += "✔️|"
+			table += "✅|"
 			et_snort_sig += 1
 		} else {
 			table += "|"
@@ -167,14 +167,14 @@ func generate_output(ia_feed map[string]ia, et_suricata_rules map[string]int, et
 		ia_entry, ok := ia_feed[cve]
 		if ok {
 			if ia_entry.Suricata_signature {
-				table += "✔️|"
+				table += "✅|"
 				ia_suri_sig += 1
 			} else {
 				table += "|"
 			}
 
 			if ia_entry.Snort_signature {
-				table += "✔️|"
+				table += "✅|"
 				ia_snort_sig += 1
 			} else {
 				table += "|"
