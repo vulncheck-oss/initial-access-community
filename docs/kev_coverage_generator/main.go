@@ -379,7 +379,7 @@ func generate_output(ia_feed map[string]ia, et_suricata_rules map[string]int, et
 		table += "|"
 		_, ok := et_suricata_rules[cve]
 		if ok {
-			table += "✔️|"
+			table += "✅|"
 			et_for_kev += 1
 		} else {
 			table += "|"
@@ -387,7 +387,7 @@ func generate_output(ia_feed map[string]ia, et_suricata_rules map[string]int, et
 
 		_, ok = et_snort_rules[cve]
 		if ok {
-			table += "✔️|"
+			table += "✅|"
 			et_for_kev += 1
 		} else {
 			table += "|"
@@ -396,42 +396,42 @@ func generate_output(ia_feed map[string]ia, et_suricata_rules map[string]int, et
 		ia_entry, ok := ia_feed[cve]
 		if ok {
 			if ia_entry.Suricata_signature {
-				table += "✔️|"
+				table += "✅|"
 				ia_suri_sig_kev += 1
 			} else {
 				table += "|"
 			}
 
 			if ia_entry.Snort_signature {
-				table += "✔️|"
+				table += "✅|"
 				ia_snort_sig_kev += 1
 			} else {
 				table += "|"
 			}
 
 			if ia_entry.Shodan {
-				table += "✔️|"
+				table += "✅|"
 				ia_shodan_kev += 1
 			} else {
 				table += "|"
 			}
 
 			if ia_entry.Censys {
-				table += "✔️|"
+				table += "✅|"
 				ia_censys_kev += 1
 			} else {
 				table += "|"
 			}
 
 			if ia_entry.Exploit {
-				table += "✔️|"
+				table += "✅|"
 				ia_exploit_kev += 1
 			} else {
 				table += "|"
 			}
 
 			if ia_entry.Scanner {
-				table += "✔️|"
+				table += "✅|"
 				ia_version_scanner += 1
 			} else {
 				table += "|"
@@ -442,7 +442,7 @@ func generate_output(ia_feed map[string]ia, et_suricata_rules map[string]int, et
 
 		_, ok = metasploit[cve]
 		if ok {
-			table += "✔️|"
+			table += "✅|"
 			metasploit_coverage += 1
 		} else {
 			table += "|"
@@ -450,7 +450,7 @@ func generate_output(ia_feed map[string]ia, et_suricata_rules map[string]int, et
 
 		_, ok = nuclei[cve]
 		if ok {
-			table += "✔️|"
+			table += "✅|"
 			nuclei_coverage += 1
 		} else {
 			table += "|"
@@ -458,7 +458,7 @@ func generate_output(ia_feed map[string]ia, et_suricata_rules map[string]int, et
 
 		_, ok = greynoise[cve]
 		if ok {
-			table += "✔️|"
+			table += "✅|"
 			greynoise_coverage += 1
 		} else {
 			table += "|"
