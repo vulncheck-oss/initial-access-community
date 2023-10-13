@@ -5,7 +5,7 @@ function run_make_recursive() {
         if [ -d "$dir" ] && [ "$(basename "$dir")" != "build" ]; then
             if [ -e "$dir/Makefile" ]; then
                 echo "Entering directory: $dir"
-                (cd "$dir" && rm go.sum && go mod tidy && make "$MAKE_TARGET")
+                (cd "$dir" && make "$MAKE_TARGET")
             fi
             run_make_recursive "$dir"
         fi
