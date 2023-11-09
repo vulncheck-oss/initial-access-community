@@ -94,3 +94,7 @@ Status emojis:
 |CVE-2023-38646|Snort|🔥|Spacing in payload|
 |CVE-2023-36845|Suricata|🔥|New exploit variant|
 |CVE-2023-36845|Snort|🔥|New exploit variant|
+|CVE-2023-46604|Suricata|🔥|Variant uses different context|
+|CVE-2023-46604|Suricata|🔥|Variant uses reformats xml|
+|CVE-2023-46604|Snort|🔥|Variant uses different context|
+|CVE-2023-46604|Snort|🔥|Variant uses reformats xml|
