@@ -98,3 +98,5 @@ Status emojis:
 |CVE-2023-46604|Suricata|🔥|Variant uses reformats xml|
 |CVE-2023-46604|Snort|🔥|Variant uses different context|
 |CVE-2023-46604|Snort|🔥|Variant uses reformats xml|
+|CVE-2023-26035|Snort|🔥|VulnCheck uses short URI, ET requires payload have a specifc order|
+|CVE-2023-26035|Snort|🔥|VulnCheck uses short URI, ET requires payload have a specifc order|
