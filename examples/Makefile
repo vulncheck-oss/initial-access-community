@@ -63,6 +63,9 @@ extra:
 clean:
 	@rm -rfv $(output_dir)
 
+docker:
+	@docker build --network=host -t $(notdir $(CURDIR)) .
+
 # make darwin-amd64|darwin-arm64|...
 darwin-%:
 # HACK: Reinvoke make to pass in vars
