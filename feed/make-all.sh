@@ -20,7 +20,7 @@ function run_make_recursive() {
 }
 
 start_dir="."
-MAKE_TARGET="all"
+MAKE_TARGET="compile"
 
 run_make_recursive "$start_dir"
 
