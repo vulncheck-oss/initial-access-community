@@ -1,26 +1,23 @@
 #!/bin/bash
 
 function run_make_recursive() {
-    local status=0
     for dir in "$1"/*; do
         if [ -d "$dir" ] && [ "$(basename "$dir")" != "build" ]; then
             if [ -e "$dir/Makefile" ]; then
                 echo "Entering directory: $dir"
-                (cd "$dir" && rm go.sum && go mod tidy && make "$MAKE_TARGET" && make clean) || status=1
+                (cd "$dir" && make "$MAKE_TARGET" && make clean)
             fi
-            run_make_recursive "$dir" || status=1
+            run_make_recursive "$dir"
         fi
-
-        if [ "$status" -eq 1 ]; then
-            return $status
-        fi
-
     done
-    return $status
 }
 
 start_dir="."
-MAKE_TARGET="all"
+MAKE_TARGET="docker"
+
+if [ "$1" == "clean" ]; then
+    MAKE_TARGET="clean"
+fi
 
 run_make_recursive "$start_dir"
 
