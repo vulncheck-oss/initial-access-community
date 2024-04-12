@@ -1,12 +1,16 @@
 #!/bin/bash
 
+###
+# Builds all the exploits leaving behind a `build` directory
+###
+
 function run_make_recursive() {
     local status=0
     for dir in "$1"/*; do
         if [ -d "$dir" ] && [ "$(basename "$dir")" != "build" ]; then
             if [ -e "$dir/Makefile" ]; then
                 echo "Entering directory: $dir"
-                (cd "$dir" && rm go.sum && go mod tidy && make "$MAKE_TARGET" && make clean) || status=1
+                (cd "$dir" && rm go.sum && go mod tidy && make compile) || status=1
             fi
             run_make_recursive "$dir" || status=1
         fi
@@ -19,8 +23,5 @@ function run_make_recursive() {
     return $status
 }
 
-start_dir="."
-MAKE_TARGET="compile"
-
-run_make_recursive "$start_dir"
+run_make_recursive .
 

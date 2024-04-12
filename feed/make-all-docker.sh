@@ -1,5 +1,9 @@
 #!/bin/bash
 
+###
+# Uses the exploits dockerfile to generate images for everything
+###
+
 function run_make_recursive() {
     for dir in "$1"/*; do
         if [ -d "$dir" ] && [ "$(basename "$dir")" != "build" ]; then
@@ -12,12 +16,7 @@ function run_make_recursive() {
     done
 }
 
-start_dir="."
 MAKE_TARGET="docker"
 
-if [ "$1" == "clean" ]; then
-    MAKE_TARGET="clean"
-fi
-
-run_make_recursive "$start_dir"
+run_make_recursive .
 
