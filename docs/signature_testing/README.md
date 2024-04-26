@@ -7,14 +7,14 @@ One of VulnCheck's stated claims is that to write truly good detections, the eng
 To compare apples to apples, we first need to pull the relevant rules out of Emerging threats. We extract that rules that cover CVE that we have created PCAP for like so:
 
 ```sh
-make
-./signature_testing --bearer_token VULNCHECK-TOKEN
+$ make
+$ ./signature_testing --bearer_token VULNCHECK-TOKEN
 ```
 
 This will generate a file called `emerging.suricata.rules`. At the time of writing this contained 322 rules:
 
 ```sh
-albinolobster@mournland:~/initial-access/docs/signature_testing$ wc -l ./emerging.suricata.rules 
+$ wc -l ./emerging.suricata.rules 
 322 ./emerging.suricata.rules
 ```
 
@@ -41,7 +41,7 @@ albinolobster@mournland:~/initial-access/docs/signature_testing$ ls -l ./pcaps/ 
 For testing, we'll run Suricata like:
 
 ```sh
-suricata -k none --runmode=single -vv -r ./pcaps/ -S ../../feed/vulncheck.suricata.rules --set HOME_NET=any --set EXTERNAL_NET=any
+$ suricata -k none --runmode=single -vv -r ./pcaps/ -S ../../feed/vulncheck.suricata.rules --set HOME_NET=any --set EXTERNAL_NET=any
 ```
 
 There are a few things I'd like to note on this:
