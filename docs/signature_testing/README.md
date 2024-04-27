@@ -72,6 +72,7 @@ $ suricata -k none --runmode=single -vv -r ./pcaps/ -S emerging.suricata.rules -
 [201598] Perf: host: host memory usage: 406144 bytes, maximum: 33554432
 $ cat fast.log | grep -oEi "CVE-[0-9]+-[0-9]+" | grep -oEi "[0-9]+-[0-9]+" | sort | uniq | wc -l
 33
+$ cat fast.log | grep -oEi "CVE-[0-9]+-[0-9]+" | grep -oEi "[0-9]+-[0-9]+" | sort | uniq > et_uniq
 ```
 
 ### Testing VulnCheck
@@ -93,4 +94,46 @@ $ suricata -k none --runmode=single -vv -r ./pcaps/ -S ../../feed/vulncheck.suri
 [208771] Perf: host: host memory usage: 406144 bytes, maximum: 33554432=
 $ cat fast.log | grep -oEi "CVE-[0-9]+-[0-9]+" | grep -oEi "[0-9]+-[0-9]+" | sort | uniq | wc -l
 182
+$ cat fast.log | grep -oEi "CVE-[0-9]+-[0-9]+" | grep -oEi "[0-9]+-[0-9]+" | sort | uniq > vc_uniq
 ```
+
+### What did ET Miss?
+
+To generate the list of CVE that VulnCheck detected on the wire, but Emerging Threats didn't, we use grep to get a diff of the two lists.
+
+```sh
+$ grep -v -x -f et_uniq vc_uniq > et_missed
+```
+
+So `et_missed` should contain all the CVE that the ET ruleset failed to generate alerts on. Feed that list into `vc-lookup.py` to get an idea on what these CVE are:
+
+```sh
+$ python3 vc-lookup.py --token TOKEN! --cve ./et_missed
+KEV: 77
+VC KEV: 110
+=== Attackers ===
+Unattributed : 79
+Mirai : 20
+China Attribution : 20
+Dark : 8
+Hajime : 6
+Kinsing : 6
+Prophet Spider : 6
+Moobot : 5
+Sysrv : 5
+Clop : 5
+Labyrinth Chollima : 5
+...
+```
+
+## Takeaway
+
+I think the take-away is just what we stated in the beginning. Writing good detections requires deep knowledge of the vulnerability and how it's used in exploitation. VulnCheck generated alerts for 182 important initial access vulnerabilities. Emerging Threats generated 33. Of the CVE that ET missed:
+
+* 77 are in CISA KEV
+* 110 are in VulnCheck KEV
+* 20 are known to be used by Chinese attackers
+* 20 are known Mirai botnet vulns
+* 5 are known to be used by Lazarus Group (Labyrinth Chollima)
+* 5 are known to be used by cl0p ransomware
+* etc.
