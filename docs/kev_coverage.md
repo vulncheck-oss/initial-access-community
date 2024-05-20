@@ -2,26 +2,27 @@
 The total number of "Initial Access" KEV entries includes all the traditional IA, plus credentialed IA and remote/unauth info leak.  
 The reason for that is there are a number of exploit chains that achieve unauth rce via infoleak+credentialed rce.  
   
-*Total Initial-Access KEV Entries*: 374
+*Total Initial-Access KEV Entries*: 375
     
-*Emerging Threats Coverage*: 337 / 374  
-*IA Suricata Signature Coverage*: 82 / 374  
-*IA Snort Signature Coverage*: 80 / 374  
-*IA Shodan Coverage*: 72 / 374  
-*IA Censys Coverage*: 72 / 374  
-*IA Exploit Coverage*: 62 / 374  
-*IA Version Scanner*: 40 / 374  
-*Metasploit*: 191 / 374  
-*Nuclei*: 171 / 374  
-*GreyNoise*: 0 / 374  
+*Emerging Threats Coverage*: 339 / 375  
+*IA Suricata Signature Coverage*: 86 / 375  
+*IA Snort Signature Coverage*: 84 / 375  
+*IA Shodan Coverage*: 77 / 375  
+*IA Censys Coverage*: 76 / 375  
+*IA Exploit Coverage*: 67 / 375  
+*IA Version Scanner*: 42 / 375  
+*Metasploit*: 192 / 375  
+*Nuclei*: 173 / 375  
+*GreyNoise*: 0 / 375  
   
 
 ## Coverage Table
 |CVE|ET Suri|ET Snort|IA Suri|IA Snort|IA Shodan|IA Censys|IA Exploit|IA Scanner|Metasploit|Nuclei|GreyNoise|
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-CVE-2024-3400|✅|✅|✅|✅|✅|✅|✅||✅|||
-CVE-2024-3273|✅|✅||||||||✅||
-CVE-2024-3272||||||||||||
+CVE-2024-4040|✅|✅|✅|✅|✅|✅|✅||✅|✅||
+CVE-2024-3400|✅|✅|✅|✅|✅|✅|✅||✅|✅||
+CVE-2024-3273|✅|✅|✅|✅|✅|✅|✅|||✅||
+CVE-2024-3272|||||✅|✅|✅|||||
 CVE-2024-27198|✅|✅|✅|✅|✅|✅|✅|✅|✅|✅||
 CVE-2024-21893|✅|✅|✅|✅|✅|✅|✅||✅|✅||
 CVE-2024-21762|✅|✅||||||||||
@@ -199,7 +200,7 @@ CVE-2020-25213|||||||||✅|✅||
 CVE-2020-2509||||||||||||
 CVE-2020-2506||||||||||||
 CVE-2020-2021||||||||||||
-CVE-2020-1938|✅|✅|||||||✅|✅||
+CVE-2020-1938|✅|✅|✅|✅|✅||✅|✅|✅|✅||
 CVE-2020-17530|✅|✅|||||||✅|✅||
 CVE-2020-17496|||||||||✅|✅||
 CVE-2020-17463||||||||||✅||
@@ -310,7 +311,7 @@ CVE-2017-18368|✅|✅|||||||✅|||
 CVE-2017-18362|✅|✅||||||||||
 CVE-2017-17562|||||||||✅|✅||
 CVE-2017-15944|||||||||✅|✅||
-CVE-2017-12617|✅|✅|||||||✅|✅||
+CVE-2017-12617|✅|✅|✅|✅|✅|✅|✅|✅|✅|✅||
 CVE-2017-12615|✅|✅||||||||✅||
 CVE-2017-12240||||||||||||
 CVE-2017-12149|✅|✅|||||||✅|✅||
