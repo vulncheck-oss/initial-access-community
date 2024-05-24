@@ -102,3 +102,5 @@ Status emojis:
 |CVE-2023-26035|Suricata|🔥|VulnCheck uses short URI, ET requires payload have a specifc order|
 |CVE-2023-22527|Snort|🔥|URL encoding payload|
 |CVE-2023-22527|Suricata|🔥|URL encoding payload|
+|CVE-2024-25600|Snort|🤷|Misses a variant|
+|CVE-2024-25600|Suricata|🤷|Misses a variant|
