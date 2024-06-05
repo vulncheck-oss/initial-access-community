@@ -11,9 +11,9 @@ import (
 )
 
 var (
-	// the address to connect back to
+	// the address to connect back to.
 	Rshost = "127.0.0.1"
-	// the port to connect back to
+	// the port to connect back to.
 	Rsport = "8080"
 )
 
