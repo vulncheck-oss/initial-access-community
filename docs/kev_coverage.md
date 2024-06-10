@@ -2,18 +2,18 @@
 The total number of "Initial Access" KEV entries includes all the traditional IA, plus credentialed IA and remote/unauth info leak.  
 The reason for that is there are a number of exploit chains that achieve unauth rce via infoleak+credentialed rce.  
   
-*Total Initial-Access KEV Entries*: 375
+*Total Initial-Access KEV Entries*: 377
     
-*Emerging Threats Coverage*: 339 / 375  
-*IA Suricata Signature Coverage*: 86 / 375  
-*IA Snort Signature Coverage*: 84 / 375  
-*IA Shodan Coverage*: 77 / 375  
-*IA Censys Coverage*: 76 / 375  
-*IA Exploit Coverage*: 67 / 375  
-*IA Version Scanner*: 42 / 375  
-*Metasploit*: 192 / 375  
-*Nuclei*: 173 / 375  
-*GreyNoise*: 0 / 375  
+*Emerging Threats Coverage*: 341 / 377  
+*IA Suricata Signature Coverage*: 88 / 377  
+*IA Snort Signature Coverage*: 86 / 377  
+*IA Shodan Coverage*: 79 / 377  
+*IA Censys Coverage*: 77 / 377  
+*IA Exploit Coverage*: 68 / 377  
+*IA Version Scanner*: 43 / 377  
+*Metasploit*: 193 / 377  
+*Nuclei*: 175 / 377  
+*GreyNoise*: 0 / 377  
   
 
 ## Coverage Table
@@ -29,11 +29,12 @@ CVE-2024-21762|✅|✅||||||||||
 CVE-2024-21410||||||||||||
 CVE-2024-1709|✅|✅|✅|✅|✅|✅|✅|✅|✅|✅||
 CVE-2023-6448||||||||||||
-CVE-2023-48788|||||||✅||✅|||
+CVE-2023-48788|||✅|✅|✅||✅||✅|||
 CVE-2023-47246|✅|✅||||||||✅||
 CVE-2023-46805|✅|✅|✅|✅|✅|✅|✅||✅|✅||
 CVE-2023-46747|✅|✅|✅|✅|✅|✅|✅||✅|✅||
 CVE-2023-46604|✅|✅|✅|✅|✅|✅|✅|✅|✅|||
+CVE-2023-43208|||✅|✅|✅|✅|✅|✅|✅|✅||
 CVE-2023-42793|✅|✅|✅|✅|✅|✅|✅|✅|✅|✅||
 CVE-2023-41993||||||||||||
 CVE-2023-41266|✅|✅||||||||✅||
@@ -307,6 +308,7 @@ CVE-2017-5689|✅|✅|||||||✅|✅||
 CVE-2017-5638|✅|✅|||||||✅|✅||
 CVE-2017-5521|✅|✅|||||||✅|✅||
 CVE-2017-3881|||||||||✅|✅||
+CVE-2017-3506|✅|✅||||||||✅||
 CVE-2017-18368|✅|✅|||||||✅|||
 CVE-2017-18362|✅|✅||||||||||
 CVE-2017-17562|||||||||✅|✅||
