@@ -10,7 +10,7 @@ function run_make_recursive() {
         if [ -d "$dir" ] && [ "$(basename "$dir")" != "build" ]; then
             if [ -e "$dir/Makefile" ]; then
                 echo "Entering directory: $dir"
-                (cd "$dir" && make compile && cp ./build/cve-* ../all) || status=1
+                (cd "$dir" && make compile && cp ./build/cve-* /tmp/go-exploit-all) || status=1
             fi
             run_make_recursive "$dir" || status=1
         fi
@@ -23,6 +23,6 @@ function run_make_recursive() {
     return $status
 }
 
-mkdir ./all
+mkdir /tmp/go-exploit-all
 run_make_recursive .
 
