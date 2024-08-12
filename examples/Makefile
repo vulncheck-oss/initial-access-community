@@ -54,7 +54,7 @@ ifneq ($(payload_files),)
 			$(foreach arch,$(payload_archs),\
 				$(eval ext := $(if $(findstring windows,$(os)),.exe))\
 				$(eval out := $(output_dir)/$(file:.go=)_$(os)-$(arch)$(ext))\
-					GOOS=$(os) GOARCH=$(arch) go build -ldflags "-s -w" -o $(out) $(file)$(newline))))
+					CGO_ENABLED=0 GOOS=$(os) GOARCH=$(arch) go build -ldflags "-s -w" -o $(out) $(file)$(newline))))
 endif
 
 # Add extra stuff to this recipe
