@@ -32,9 +32,9 @@ format:
 	gofmt -d -w $(exploit_files) $(payload_files)
 
 lint:
-	$(foreach file,$(exploit_files),golangci-lint run --fix $(file)$(newline))
+	$(foreach file,$(exploit_files),golangci-lint run --fix --timeout 3m $(file)$(newline))
 ifneq ($(payload_files),)
-	$(foreach file,$(payload_files),golangci-lint run --fix $(file)$(newline))
+	$(foreach file,$(payload_files),golangci-lint run --fix --timeout 3m $(file)$(newline))
 endif
 
 compile: exploit payload extra
