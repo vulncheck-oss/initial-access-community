@@ -1,5 +1,6 @@
 # Don't touch this variable
 export GO111MODULE := on
+build_flags := $(FLAGS)
 
 # HACK: "Detect" exploit and payload filenames
 exploit_files := $(wildcard cve-*.go)
@@ -46,7 +47,7 @@ exploit: ext = $(if $(findstring windows,$(exploit_os)),.exe)
 exploit:
 	$(foreach file,$(exploit_files),\
 		$(eval out := $(output_dir)/$(file:.go=)_$(exploit_os)-$(exploit_arch)$(ext))\
-			GOOS=$(exploit_os) GOARCH=$(exploit_arch) go build -o $(out) $(file)$(newline))
+			GOOS=$(exploit_os) GOARCH=$(exploit_arch) go build $(build_flags) -o $(out) $(file)$(newline))
 
 # Change this value if you need to
 payload: export GOARM := 7
