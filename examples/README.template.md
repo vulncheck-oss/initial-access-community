@@ -19,12 +19,18 @@ artifacts:
     zeroday: false
     targetService: HTTP
     targetDocker: false
+    mitreAttackTechniques:
+      - {{.MITREAttackTechniques}}
     shodanQueries:
       - {{.ShodanURLs}}
     censysQueries:
       - {{.CensysURLs}}
     greynoiseQueries:
       - {{.GreynoiseURLs}}
+    googleQueries:
+      - {{.GoogleURLs}}
+    baiduQueries:
+      - {{.BaiduURLS}}
 ---
 # {{.CVE}}: {{.Description}}
 
