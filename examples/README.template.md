@@ -25,6 +25,10 @@ artifacts:
       - {{.ShodanURLs}}
     censysQueries:
       - {{.CensysURLs}}
+    fofaQueries
+      - {{.fofaURLs}}
+    zoomEyeQueries:
+      - {{.zoomEyeURLs}}
     greynoiseQueries:
       - {{.GreynoiseURLs}}
     googleQueries:
