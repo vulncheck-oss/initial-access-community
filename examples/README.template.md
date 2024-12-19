@@ -1,5 +1,5 @@
 ---
-ready: false
+ready: true
 id: {{.UUID}}
 cve: {{.CVE}}
 artifacts:
@@ -25,7 +25,7 @@ artifacts:
       - {{.ShodanURLs}}
     censysQueries:
       - {{.CensysURLs}}
-    fofaQueries
+    fofaQueries:
       - {{.fofaURLs}}
     zoomEyeQueries:
       - {{.zoomEyeURLs}}
