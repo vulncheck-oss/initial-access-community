@@ -52,7 +52,7 @@ exploit:
 # Change this value if you need to
 payload: export GOARM := 7
 payload:
-# only generate payload if rshost na
+# only generate payload if lhost and lport were defined on the command line
 ifneq ($(and $(lhost),$(lport)),)
 	$(foreach file,$(payload_files),\
 		$(foreach os,$(payload_oses),\
