@@ -18,6 +18,7 @@ artifacts:
     nmapScript: false
     zeroday: false
     targetService: HTTP
+    encryptedProtocol: {yes|no|both|}
     targetDocker: false
     mitreAttackTechniques:
       - {{.MITREAttackTechniques}}
