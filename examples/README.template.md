@@ -30,12 +30,12 @@ artifacts:
       - {{.fofaURLs}}
     zoomEyeQueries:
       - {{.zoomEyeURLs}}
-    greynoiseQueries:
-      - {{.GreynoiseURLs}}
     googleQueries:
       - {{.GoogleURLs}}
     baiduQueries:
       - {{.BaiduURLS}}
+    greynoiseQueries:
+      - {{.GreynoiseURLs}}
 ---
 # {{.CVE}}: {{.Description}}
 
