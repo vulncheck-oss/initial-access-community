@@ -1,3 +1,4 @@
+set -e
 # Set the output file for the combined rules
 OUTPUT_FILE="vulncheck.snort.rules"
 
@@ -23,5 +24,5 @@ sed -i '/^$/d' "$OUTPUT_FILE"
 awk -F'sid:' '/sid:/ {sid=$2; sub(/;.*/, "", sid); if (sid in sids) { print "Error: Duplicate SID " sid " detected."; exit 1 } else { sids[sid] } }' "$OUTPUT_FILE"
 
 # Extract SIDs and sort rules by SID in descending order
-awk -F'sid:' '{print $2}' "$OUTPUT_FILE" | awk -F';' '{print $1}' | sort -n | while read -r sid; do grep "sid:$sid;" "$OUTPUT_FILE"; done > sorted_"$OUTPUT_FILE"
+awk -F'sid:' '{print $2}' "$OUTPUT_FILE" | awk -F';' '{print $1}' | sort -n | while read -r sid; do if [ "$sid" != "" ]; then grep "sid:$sid;" "$OUTPUT_FILE"; fi; done > sorted_"$OUTPUT_FILE"
 mv sorted_"$OUTPUT_FILE" "$OUTPUT_FILE"
