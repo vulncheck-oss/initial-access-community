@@ -12,6 +12,7 @@ artifacts:
     exploit: false
     versionScanner: false
     pcap: false
+    sigmaRule: false
     suricataRule: false
     snortRule: false
     yara: false
