@@ -108,4 +108,6 @@ Status emojis:
 |CVE-2024-25600|Suricata|🤷|Misses a variant|
 |CVE-2023-23692|Snort|🔥|No CVE was initially assigned, VulnCheck assigned and created signatures|
 |CVE-2023-23692|Suricata|🔥|No CVE was initially assigned, VulnCheck assigned and created signatures|
+|CVE-2025-34043|Suricata|🔥|Combined params and endpoint|
+|CVE-2025-34043|Snort|🔥|Combined params and endpoint|
 
