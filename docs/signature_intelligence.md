@@ -110,4 +110,5 @@ Status emojis:
 |CVE-2023-23692|Suricata|🔥|No CVE was initially assigned, VulnCheck assigned and created signatures|
 |CVE-2025-34043|Suricata|🔥|Combined params and endpoint|
 |CVE-2025-34043|Snort|🔥|Combined params and endpoint|
+|CVE-2025-48703|Suricata|🔥|Whitespace in payload|
 
