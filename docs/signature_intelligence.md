@@ -113,3 +113,5 @@ Status emojis:
 |CVE-2025-48703|Suricata|🔥|Whitespace in payload|
 |CVE-2025-47812|Suricata|💔|Searches for non-encoded characters|
 |CVE-2025-47812|Snort|💔|Searches for non-encoded characters|
+|CVE-2025-29891|Snort|💔|Assumes payload is in URI|
+|CVE-2025-29891|Suricata|💔|Assumes payload is in URI|
