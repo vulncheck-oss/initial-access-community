@@ -27,10 +27,14 @@ artifacts:
       - {{.ShodanURLs}}
     censysQueries:
       - {{.CensysURLs}}
+    censysLegacyQueries:
+      - {{.CensysLegacyURLs}}
     fofaQueries:
       - {{.fofaURLs}}
     zoomEyeQueries:
       - {{.zoomEyeURLs}}
+    driftnetQueries:
+      - {{.driftnetQueries}}
     googleQueries:
       - {{.GoogleURLs}}
     baiduQueries:
