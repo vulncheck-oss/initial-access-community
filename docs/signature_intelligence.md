@@ -115,3 +115,5 @@ Status emojis:
 |CVE-2025-47812|Snort|💔|Searches for non-encoded characters|
 |CVE-2025-29891|Snort|💔|Assumes payload is in URI|
 |CVE-2025-29891|Suricata|💔|Assumes payload is in URI|
+|CVE-2025-57819|Suricata|💔|Does not account for POST requests with data in URI|
+|CVE-2025-57819|Snort|💔|Does not account for POST requests with data in URI|
