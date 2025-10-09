@@ -117,3 +117,5 @@ Status emojis:
 |CVE-2025-29891|Suricata|💔|Assumes payload is in URI|
 |CVE-2025-57819|Suricata|💔|Does not account for POST requests with data in URI|
 |CVE-2025-57819|Snort|💔|Does not account for POST requests with data in URI|
+|CVE-2025-36604|Suricata|💔||
+|CVE-2025-36604|Snort|💔||
