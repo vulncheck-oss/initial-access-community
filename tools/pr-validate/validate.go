@@ -117,6 +117,13 @@ func main() {
 				log.Printf("Skipping validations for %s... %s", entry.CVE, skiplist[entry.CVE])
 				continue
 			}
+			const shortForm = "2006-01-02"
+			t, _ := time.Parse(shortForm, artifact.DateAdded)
+			future := time.Now().Add(time.Hour * 24 * 3)
+			if t.After(future) {
+				log.Printf("ERROR: %s - Date is too far in the future: %s", entry.CVE, artifact.DateAdded)
+				failed++
+			}
 
 			matched := false
 			for _, file := range files {
