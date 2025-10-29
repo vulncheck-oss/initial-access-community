@@ -1,5 +1,4 @@
 ---
-ready: true
 id: {{.UUID}}
 cve: {{.CVE}}
 artifacts:
@@ -17,7 +16,6 @@ artifacts:
     snortRule: false
     yara: false
     nmapScript: false
-    zeroday: false
     targetService: HTTP
     targetEncryptedComms: {yes|no|either|}
     targetDocker: false
