@@ -119,3 +119,5 @@ Status emojis:
 |CVE-2025-57819|Snort|💔|Does not account for POST requests with data in URI|
 |CVE-2025-36604|Suricata|💔||
 |CVE-2025-36604|Snort|💔||
+|CVE-2025-34299|Suricata|💔|Path param names case-insensitive and static value for path|
+|CVE-2025-34299|Snort|💔|Path param names case-insensitive and static value for path|
