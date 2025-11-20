@@ -124,8 +124,28 @@ func main() {
 				log.Printf("ERROR: %s - Date is too far in the future: %s", entry.CVE, artifact.DateAdded)
 				failed++
 			}
-
 			matched := false
+			for _, file := range files {
+				if strings.Contains(file, fmt.Sprintf("%s/", cveLower)) {
+					if strings.Contains(file, cveLower+".go") {
+						matched = true
+					}
+				}
+			}
+			if artifact.Exploit {
+				if !matched {
+					log.Printf("ERROR: %s - has exploit marked as true but `%s/%s.go` was not found", entry.CVE, cveLower, cveLower)
+					failed++
+
+				}
+			} else {
+				if matched {
+					log.Printf("ERROR: %s - has exploit marked as false but `%s/%s.go` was found", entry.CVE, cveLower, cveLower)
+					failed++
+				}
+			}
+
+			matched = false
 			for _, file := range files {
 				if strings.Contains(file, fmt.Sprintf("%s/", cveLower)) {
 					if strings.Contains(file, ".snort.rule") {
