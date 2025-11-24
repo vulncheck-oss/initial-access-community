@@ -140,8 +140,14 @@ func main() {
 				}
 			} else {
 				if matched {
-					log.Printf("ERROR: %s - has exploit marked as false but `%s/%s.go` was found", entry.CVE, cveLower, cveLower)
-					failed++
+					data, err := os.ReadFile(fmt.Sprintf("%s/%s/%s.go", flagDirectory, cveLower, cveLower))
+					if err != nil {
+						log.Fatal(err)
+					}
+					if !strings.Contains(string(data), `RunExploit(_ *config.Config)`) {
+						log.Printf("ERROR: %s - has exploit marked as false but `%s/%s.go` was found", entry.CVE, cveLower, cveLower)
+						failed++
+					}
 				}
 			}
 
