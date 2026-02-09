@@ -101,6 +101,7 @@ func main() {
 		"CVE-2024-3272":  "Chain",
 		"CVE-2024-9474":  "Chain",
 		"CVE-2025-31161": "CVE Changed",
+		"CVE-2025-40536": "Chain",
 		"CVE-2025-49706": "Chain",
 		"CVE-2025-53771": "Chain",
 		"CVE-2026-1470":  "Matches CVE-2025-68613",
