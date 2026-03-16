@@ -105,6 +105,7 @@ func main() {
 		"CVE-2025-49706": "Chain",
 		"CVE-2025-53771": "Chain",
 		"CVE-2026-1470":  "Matches CVE-2025-68613",
+		"CVE-2023-24955": "Chain",
 		"CVE-2025-47813": "Chain",
 	}
 	flag.Parse()
