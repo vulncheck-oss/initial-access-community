@@ -7,6 +7,8 @@ artifacts:
       - {{.Product}}
       - {{.Product2}}
     dateAdded: "{{.DateNow}}"
+    related: []
+    chain: []
     artifactName: {{.Description}}
     exploit: false
     versionScanner: false

@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -32,6 +33,8 @@ type Artifact struct {
 	DateTime               time.Time
 	ArtifactName           string   `json:"artifactName"           yaml:"artifactName"`
 	Exploit                bool     `json:"exploit"                yaml:"exploit"`
+	Chain                  []string `json:"chain"                  yaml:"chain"`
+	Related                []string `json:"related"                yaml:"related"`
 	VersionScanner         bool     `json:"versionScanner"         yaml:"versionScanner"`
 	Pcap                   bool     `json:"pcap"                   yaml:"pcap"`
 	SigmaRule              bool     `json:"sigmaRule"              yaml:"sigmaRule"`
@@ -87,25 +90,11 @@ func main() {
 	flag.StringVar(&flagDirectory, "dir", "./feed", "Directory to read feed from")
 	skiplist := map[string]string{
 		"CVE-2021-44228": "Multitarget CVE does not map cleanly to predictable paths",
-		"CVE-2022-20707": "Chain",
 		"CVE-2023-29300": "CVE Changed",
-		"CVE-2023-34124": "Chain",
-		"CVE-2023-34132": "Chain",
-		"CVE-2023-34133": "Chain",
-		"CVE-2023-38203": "Chain",
-		"CVE-2023-38205": "Chain",
 		"CVE-2023-4220":  "Docker references external CVE",
-		"CVE-2023-45499": "Chain",
-		"CVE-2024-2961":  "Chain",
-		"CVE-2024-31214": "Chain",
-		"CVE-2024-3272":  "Chain",
-		"CVE-2024-9474":  "Chain",
+		"CVE-2024-2961":  "Unclean chain",
 		"CVE-2025-31161": "CVE Changed",
-		"CVE-2025-40536": "Chain",
-		"CVE-2025-49706": "Chain",
-		"CVE-2025-53771": "Chain",
 		"CVE-2026-1470":  "Matches CVE-2025-68613",
-		"CVE-2023-24955": "Chain",
 		"CVE-2025-47813": "Chain",
 	}
 	flag.Parse()
@@ -117,9 +106,21 @@ func main() {
 	for _, entry := range f.Entries {
 		cveLower := strings.ToLower(entry.CVE)
 		for _, artifact := range entry.Artifacts {
+			isChain := false
 			if skiplist[entry.CVE] != "" {
 				log.Printf("Skipping validations for %s... %s", entry.CVE, skiplist[entry.CVE])
 				continue
+			}
+			// Once the chain component is merged we should probably add support for iterating into the chain entries and still having more aggressive validation.
+			if len(artifact.Chain) != 0 {
+				if !slices.Contains(artifact.Chain, entry.CVE) {
+					log.Printf("ERROR: %s - Entry CVE is not in chain: %v", entry.CVE, artifact.Chain)
+					failed++
+					continue
+				} else {
+					log.Printf("Skipping validations for %s due to it being a chain", entry.CVE)
+					isChain = true
+				}
 			}
 			const shortForm = "2006-01-02"
 			t, _ := time.Parse(shortForm, artifact.DateAdded)
@@ -138,9 +139,12 @@ func main() {
 			}
 			if artifact.Exploit {
 				if !matched {
-					log.Printf("ERROR: %s - has exploit marked as true but `%s/%s.go` was not found", entry.CVE, cveLower, cveLower)
-					failed++
-
+					if isChain {
+						log.Printf("WARN: %s - has exploit marked as true but `%s/%s.go` was not found, but the exploit is marked as a chain", entry.CVE, cveLower, cveLower)
+					} else {
+						log.Printf("ERROR: %s - has exploit marked as true but `%s/%s.go` was not found", entry.CVE, cveLower, cveLower)
+						failed++
+					}
 				}
 			} else {
 				if matched {
@@ -149,8 +153,13 @@ func main() {
 						log.Fatal(err)
 					}
 					if !strings.Contains(string(data), `RunExploit(_ *config.Config)`) {
-						log.Printf("ERROR: %s - has exploit marked as false but `%s/%s.go` was found", entry.CVE, cveLower, cveLower)
-						failed++
+						if isChain {
+							log.Printf("WARN: %s - has exploit marked as false but `%s/%s.go` was found, but the exploit is marked as a chain", entry.CVE, cveLower, cveLower)
+						} else {
+
+							log.Printf("ERROR: %s - has exploit marked as false but `%s/%s.go` was found", entry.CVE, cveLower, cveLower)
+							failed++
+						}
 					}
 				}
 			}
@@ -165,13 +174,23 @@ func main() {
 			}
 			if artifact.SnortRule {
 				if !matched {
-					log.Printf("ERROR: %s - has snort marked as true but `%s/*%s` was not found", entry.CVE, cveLower, snortSuffix)
-					failed++
+					if isChain {
+						log.Printf("WARN: %s - has snort marked as true but `%s/*%s` was not found, but is in a chain", entry.CVE, cveLower, snortSuffix)
+					} else {
+
+						log.Printf("ERROR: %s - has snort marked as true but `%s/*%s` was not found", entry.CVE, cveLower, snortSuffix)
+
+						failed++
+					}
 				}
 			} else {
 				if matched {
-					log.Printf("ERROR: %s - has snort marked as false but `%s/*%s` was found", entry.CVE, cveLower, snortSuffix)
-					failed++
+					if isChain {
+						log.Printf("WARN: %s - has snort marked as false but `%s/*%s` was found, but is in a chain", entry.CVE, cveLower, snortSuffix)
+					} else {
+						log.Printf("ERROR: %s - has snort marked as false but `%s/*%s` was found", entry.CVE, cveLower, snortSuffix)
+						failed++
+					}
 				}
 			}
 
@@ -185,13 +204,21 @@ func main() {
 			}
 			if artifact.SuricataRule {
 				if !matched {
-					log.Printf("ERROR: %s - has suricata marked as true but `%s/*%s` was not found", entry.CVE, cveLower, suricataSuffix)
-					failed++
+					if isChain {
+						log.Printf("WARN: %s - has suricata marked as true but `%s/*%s` was not found, but is in chain", entry.CVE, cveLower, suricataSuffix)
+					} else {
+						log.Printf("ERROR: %s - has suricata marked as true but `%s/*%s` was not found", entry.CVE, cveLower, suricataSuffix)
+						failed++
+					}
 				}
 			} else {
 				if matched {
-					log.Printf("ERROR: %s - has suricata marked as false but `%s/*%s` was found", entry.CVE, cveLower, suricataSuffix)
-					failed++
+					if isChain {
+						log.Printf("WARN: %s - has suricata marked as false but `%s/*%s` was found, but is in chain", entry.CVE, cveLower, suricataSuffix)
+					} else {
+						log.Printf("ERROR: %s - has suricata marked as false but `%s/*%s` was found", entry.CVE, cveLower, suricataSuffix)
+						failed++
+					}
 				}
 			}
 
@@ -205,13 +232,21 @@ func main() {
 			}
 			if artifact.Yara {
 				if !matched {
-					log.Printf("ERROR: %s - has yara marked as true but `%s/*%s` was not found", entry.CVE, cveLower, yaraSuffix)
-					failed++
+					if isChain {
+						log.Printf("WARN: %s - has yara marked as true but `%s/*%s` was not found, but is in chain", entry.CVE, cveLower, yaraSuffix)
+					} else {
+						log.Printf("ERROR: %s - has yara marked as true but `%s/*%s` was not found", entry.CVE, cveLower, yaraSuffix)
+						failed++
+					}
 				}
 			} else {
 				if matched {
-					log.Printf("ERROR: %s - has yara marked as false but `%s/*%s` was found", entry.CVE, cveLower, yaraSuffix)
-					failed++
+					if isChain {
+						log.Printf("WARN: %s - has yara marked as false but `%s/*%s` was found, but is in chain", entry.CVE, cveLower, yaraSuffix)
+					} else {
+						log.Printf("ERROR: %s - has yara marked as false but `%s/*%s` was found", entry.CVE, cveLower, yaraSuffix)
+						failed++
+					}
 				}
 			}
 
@@ -228,13 +263,21 @@ func main() {
 			}
 			if artifact.Pcap {
 				if !matched {
-					log.Printf("ERROR: %s - has pcaps marked as true but `%s/%s*%s` was not found", entry.CVE, cveLower, pcapPrefix, pcapSuffix)
-					failed++
+					if isChain {
+						log.Printf("WARN: %s - has pcaps marked as true but `%s/%s*%s` was not found, but is in a chain", entry.CVE, cveLower, pcapPrefix, pcapSuffix)
+					} else {
+						log.Printf("ERROR: %s - has pcaps marked as true but `%s/%s*%s` was not found", entry.CVE, cveLower, pcapPrefix, pcapSuffix)
+						failed++
+					}
 				}
 			} else {
 				if matched {
-					log.Printf("ERROR: %s - has pcaps marked as false but `%s/%s*%s` was found", entry.CVE, cveLower, pcapPrefix, pcapSuffix)
-					failed++
+					if isChain {
+						log.Printf("WARN: %s - has pcaps marked as false but `%s/%s*%s` was found, but is in a chain", entry.CVE, cveLower, pcapPrefix, pcapSuffix)
+					} else {
+						log.Printf("ERROR: %s - has pcaps marked as false but `%s/%s*%s` was found", entry.CVE, cveLower, pcapPrefix, pcapSuffix)
+						failed++
+					}
 				}
 			}
 
@@ -249,13 +292,22 @@ func main() {
 
 			if artifact.TargetDocker {
 				if !matched {
-					log.Printf("ERROR: %s - has docker marked as true but `%s/%s%s` was not found", entry.CVE, cveLower, dockerPrefix, cveLower)
-					failed++
+					if isChain {
+						log.Printf("WARN: %s - has docker marked as true but `%s/%s%s` was not found, but is in a chain", entry.CVE, cveLower, dockerPrefix, cveLower)
+					} else {
+						log.Printf("ERROR: %s - has docker marked as true but `%s/%s%s` was not found", entry.CVE, cveLower, dockerPrefix, cveLower)
+						failed++
+					}
 				}
 			} else {
 				if matched {
-					log.Printf("ERROR: %s - has docker marked as false but `%s/%s%s` was found", entry.CVE, cveLower, dockerPrefix, cveLower)
-					failed++
+					if isChain {
+						log.Printf("WARN: %s - has docker marked as false but `%s/%s%s` was found, but is in a chain", entry.CVE, cveLower, dockerPrefix, cveLower)
+					} else {
+
+						log.Printf("ERROR: %s - has docker marked as false but `%s/%s%s` was found", entry.CVE, cveLower, dockerPrefix, cveLower)
+						failed++
+					}
 				}
 			}
 
