@@ -121,3 +121,5 @@ Status emojis:
 |CVE-2025-36604|Snort|💔||
 |CVE-2025-34299|Suricata|💔|Path param names case-insensitive and static value for path|
 |CVE-2025-34299|Snort|💔|Path param names case-insensitive and static value for path|
+|CVE-2026-21643|Suricata|🔥|Assumes Site header is case-sensitive|
+|CVE-2026-21643|Snort|🔥|Assumes Site header is case-sensitive|
