@@ -75,6 +75,7 @@ var (
 	pcapPrefix     = `00-`
 	pcapSuffix     = `.pcap`
 	dockerPrefix   = `target-`
+	failed         = 0
 )
 
 func exists(files []string, name string) bool {
@@ -108,7 +109,6 @@ func main() {
 	f, files, _ := MarkdownToFeed(flagDirectory)
 
 	// Allow aggregating errors to allow fixing of multiple issues
-	failed := 0
 	for _, entry := range f.Entries {
 		cveLower := strings.ToLower(entry.CVE)
 		for _, artifact := range entry.Artifacts {
@@ -411,7 +411,8 @@ func frontmatterToEntry(data string, name string) (Entry, bool) {
 	entry := Entry{}
 	_, err := frontmatter.MustParse(strings.NewReader(data), &entry)
 	if err != nil {
-		log.Printf("WARN: Frontmatter (%s): %s", name, err.Error())
+		log.Printf("ERROR: Frontmatter (%s): %s", name, err.Error())
+		failed++
 
 		return Entry{}, false
 	}
@@ -435,8 +436,8 @@ func MarkdownToFeed(dir string) (Feed, []string, error) {
 
 				return err
 			}
-			if strings.Contains(string(data), "---\n") {
-				e, ok := frontmatterToEntry(string(data), dir+"/"+path)
+			if strings.HasPrefix(string(data), "---\n") {
+				e, ok := frontmatterToEntry(string(data), filepath.Join(dir, path))
 				if ok {
 					if e.Artifacts != nil || e.CVE != "" {
 						for i := range e.Artifacts {
