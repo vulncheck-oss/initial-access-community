@@ -38,6 +38,11 @@ jobs:
           # see whatever has landed since.
           ref: main
           fetch-depth: 0
+          # PAT (not GITHUB_TOKEN) so the commit-back push can pass branch
+          # protection on main. Also lets the push retrigger downstream
+          # workflows where needed; the commit carries [skip ci] to avoid
+          # re-firing this one.
+          token: ${{ secrets.IAI_COMM_SID_BOT_PAT }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
