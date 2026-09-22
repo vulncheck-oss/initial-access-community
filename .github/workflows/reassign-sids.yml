@@ -42,7 +42,7 @@ jobs:
           # protection on main. Also lets the push retrigger downstream
           # workflows where needed; the commit carries [skip ci] to avoid
           # re-firing this one.
-          token: ${{ secrets.IAI_COMM_SID_BOT_PAT }}
+          token: ${{ secrets.IAI_COMM_REPO_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
