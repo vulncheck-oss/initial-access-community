@@ -1,0 +1,97 @@
+name: PR Validation
+on:
+  pull_request:
+    paths:
+      - 'feed/**/README.md'
+      - 'feed/**/cve-*.go'
+jobs:
+  pr-validate:
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Checkout initial-access-community repo
+      uses: actions/checkout@v6.0.2
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+
+    - name: Set up Go
+      uses: actions/setup-go@v6.4.0
+      with:
+        go-version: '1.26.2'
+        cache: false
+
+    - name: Set up Go Cache
+      uses: actions/cache@v5.0.4
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+
+    - name: Feed Validation (Multiple Checks)
+      env:
+        GITHUB_ACTIONS: '1'
+      run: python .github/scripts/feed_check.py feed
+
+    - name: Validate Frontmatter Entries
+      run: |
+        cd tools/pr-validate && go run validate.go -dir ../../feed/
+
+    - name: Get changed files
+      id: changes
+      run: |
+        echo 'changed<<EOF' >> $GITHUB_OUTPUT
+        git diff --name-only HEAD~1 >> $GITHUB_OUTPUT
+        echo 'EOF' >> $GITHUB_OUTPUT
+
+    - name: Compile changed exploits
+      env:
+        CHANGED: ${{ steps.changes.outputs.changed }}
+      run: |
+        echo "Changed files: $CHANGED"
+        updatedcache=false
+        rdir="$(pwd)"
+        for cfile in $CHANGED; do
+          if echo "$cfile" | grep -q -E 'feed/cve-.*/cve-.*\.go'; then
+            echo "Compiling: $cfile"
+            dir="$(dirname "$cfile")"
+            cd "$dir"
+            go mod tidy -diff || (printf "Go mod tidy failed on %s\\n" "$dir" 1>&2 && exit 1)
+
+            # Dynamically install deps instead of doing it every run for speed
+            grep -q "musl-gcc" Makefile Dockerfile && \
+              if [ "$updatedcache" = false ]; then
+                sudo apt update
+                updatedcache=true
+              fi && \
+              sudo apt install -y musl-dev musl-tools
+            grep -q "patchelf" Makefile Dockerfile && \
+              if [ "$updatedcache" = false ]; then
+                sudo apt update
+                updatedcache=true
+              fi && \
+              sudo apt install -y patchelf
+             grep -q "openjdk-\d+-jdk" Makefile Dockerfile && \
+              if [ "$updatedcache" = false ]; then
+                sudo apt update
+                updatedcache=true
+              fi && \
+              sudo apt install -y openjdk-11-jdk
+            grep -q "libssl-dev" Makefile Dockerfile && \
+              if [ "$updatedcache" = false ]; then
+                sudo apt update
+                updatedcache=true
+              fi && \
+              sudo apt install -y libssl-dev
+            grep -q -e "gcc-mingw-w64-x86-64" -e "x86_64-w64-mingw32-gcc" Makefile Dockerfile && \
+              if [ "$updatedcache" = false ]; then
+                sudo apt update
+                updatedcache=true
+              fi && \
+              sudo apt install -y gcc-mingw-w64
+
+            make compile
+          fi
+          cd "$rdir"
+        done
