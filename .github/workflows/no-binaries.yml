@@ -1,0 +1,82 @@
+name: No Binaries or Archives
+on:
+  pull_request:
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Reject zip archives and compiled binaries
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          set -euo pipefail
+
+          # Extensions we never want committed. PCAPs live in the feed by design,
+          # so they are not on this list. Everything else that is either an
+          # archive or a compiled artifact is.
+          BAD_EXT_RE='\.(zip|tar|tar\.gz|tgz|tar\.bz2|tbz2|tar\.xz|txz|rar|7z|jar|war|ear|apk|ipa|deb|rpm|msi|exe|dll|so|dylib|a|o|obj|class|pyc|pyo|bin|elf|iso|img|vmdk|qcow2|ova)$'
+
+          # Files added (A) or modified (M) in this PR.
+          mapfile -t CHANGED < <(git diff --name-only --diff-filter=AM "origin/${BASE_REF}...HEAD")
+
+          fail=0
+          bad_ext=()
+          bad_magic=()
+
+          for f in "${CHANGED[@]}"; do
+            [ -f "$f" ] || continue
+
+            if echo "$f" | grep -qiE "$BAD_EXT_RE"; then
+              bad_ext+=("$f")
+              fail=1
+              continue
+            fi
+
+            # Content sniff for anything that slipped past the extension check.
+            # `file --brief --mime-type` is deterministic and doesn't need libmagic
+            # tuning. We flag ELF, Mach-O, PE, and generic archives.
+            mime="$(file --brief --mime-type -- "$f" 2>/dev/null || echo unknown)"
+            case "$mime" in
+              application/x-executable|application/x-sharedlib|application/x-pie-executable|\
+              application/x-mach-binary|application/x-dosexec|application/vnd.microsoft.portable-executable|\
+              application/x-object|application/java-archive|\
+              application/zip|application/x-tar|application/x-rar|application/x-7z-compressed|\
+              application/gzip|application/x-gzip|application/x-bzip2|application/x-xz)
+                # PCAPs are captured traffic, allow them explicitly even if libmagic
+                # ever mislabels one. Everything else with these MIME types is rejected.
+                case "$f" in
+                  *.pcap|*.pcapng) : ;;
+                  *) bad_magic+=("$f  ($mime)"); fail=1 ;;
+                esac
+                ;;
+            esac
+          done
+
+          if [ "$fail" -ne 0 ]; then
+            echo "::error::This PR contains files that must not be committed to the repo."
+            if [ "${#bad_ext[@]}" -gt 0 ]; then
+              echo ""
+              echo "Rejected by file extension:"
+              printf '  - %s\n' "${bad_ext[@]}"
+            fi
+            if [ "${#bad_magic[@]}" -gt 0 ]; then
+              echo ""
+              echo "Rejected by file content (compiled binary or archive):"
+              printf '  - %s\n' "${bad_magic[@]}"
+            fi
+            echo ""
+            echo "Remove these files from the PR. Archives and compiled binaries do"
+            echo "not belong in the source tree — exploits are built from source via"
+            echo "the Makefile, and target artifacts live in Docker images or as"
+            echo "external references."
+            exit 1
+          fi
+
+          echo "No zip archives or compiled binaries found in the PR diff."

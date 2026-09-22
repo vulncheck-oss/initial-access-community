@@ -1,0 +1,110 @@
+name: Reassign Rule SIDs
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**/*.suricata.rule'
+      - '**/*.snort.rule'
+  # Manual recovery trigger. Use the "Run workflow" button on the Actions
+  # page when a push-triggered run gets stuck (e.g. on a non-fast-forward
+  # push that won't recover by re-running the failed job).
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Serialize SID-bot runs so they don't race on .sid_counter. Queues
+# additional runs rather than cancelling them so no SID assignment is
+# dropped.
+concurrency:
+  group: sid-assignment
+  cancel-in-progress: false
+
+jobs:
+  reassign-sids:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-actions[bot]'
+
+    steps:
+      - name: Checkout main HEAD
+        uses: actions/checkout@v4
+        with:
+          # Pin to main HEAD instead of github.sha. github.sha is fixed at
+          # trigger time, so re-runs of failed workflows always land at the
+          # stale trigger commit and reproduce the original race. Pinning
+          # to main means re-runs and queued concurrency-group runs both
+          # see whatever has landed since.
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Reassign SIDs
+        run: |
+          # Pass only files that actually contain placeholder SIDs. The
+          # script's check_duplicates() runs unconditionally on every file
+          # in --changed-files before the is_unassigned() gate, so passing
+          # the entire corpus would exit 1 on the first pre-existing
+          # legitimate duplicate-msg (HTTP/HTTPS rule variants, for
+          # example).
+          #
+          # SID_RANGE_START = 12_900_000 in reassign_sids.py. Any rule with
+          # a sid value below that is in the placeholder range and needs
+          # assignment. Match sid values of 1–7 digits (every value below
+          # 10M, well under the range start) — that's every realistic
+          # placeholder we'd see in a freshly merged PR. The script itself
+          # does the precise numeric comparison; this filter only narrows
+          # the duplicate-check surface.
+          mapfile -t FILES < <(
+            find . -type f \( -name '*.suricata.rule' -o -name '*.snort.rule' \) -print0 \
+              | xargs -0 -r grep -lE 'sid:[0-9]{1,7};' \
+              | sed 's|^\./||' | sort -u
+          )
+          if [ "${#FILES[@]}" -eq 0 ]; then
+            echo "no rule files with placeholder SIDs found"
+            exit 0
+          fi
+          echo "files with placeholder SIDs:"
+          printf '  %s\n' "${FILES[@]}"
+          python .github/scripts/reassign_sids.py \
+            --sid-file .sid_counter \
+            --changed-files "${FILES[@]}"
+
+      - name: Commit and push
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "no SID changes to commit"
+            exit 0
+          fi
+          git commit -m "ci: reassign SIDs in merged rules [skip ci]"
+
+          # Race-safe push. The concurrency group serializes SID-bot runs,
+          # but a non-bot push (someone editing a rule file directly) can
+          # still race us. On non-fast-forward, rebase onto current
+          # origin/main and retry. Light jitter avoids thundering-herd
+          # behavior; a real merge conflict aborts and surfaces the error.
+          for attempt in 1 2 3 4 5; do
+            if git push origin main; then
+              echo "push succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "push failed (attempt $attempt), rebasing onto origin/main"
+            git fetch origin main
+            if ! git rebase origin/main; then
+              echo "::error::rebase produced a conflict; aborting"
+              git rebase --abort || true
+              exit 1
+            fi
+            sleep $((RANDOM % 5 + 2))
+          done
+          echo "::error::push failed after 5 attempts"
+          exit 1
