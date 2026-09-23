@@ -1,0 +1,12 @@
+version: 2
+updates:
+  # One gomod update config per Go module under feed/. The "/feed/**" glob
+  # matches every ./feed/cve-YYYY-NNNN directory (and nested exploit variants
+  # like cve-2026-72898/ato) that contains a go.mod, so new CVEs are picked up
+  # automatically without editing this file. Directories without a manifest are
+  # ignored, and target-* build contexts carry no go.mod so they are skipped.
+  - package-ecosystem: gomod
+    directories:
+      - "/feed/**"
+    schedule:
+      interval: weekly
