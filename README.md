@@ -1,6 +1,6 @@
 # Initial Access Community
 
-VulnCheck's Initial Access Community contains exploits and associated artifacts from our proprietary [Initial Access Intelligence](https://docs.vulncheck.com/products/initial-access-intelligence) product and community contributions. The typical focus of Initial Access is network-based vulnerabilities that don't require user interaction, with a strong preference for unauthenticated vulnerabilities. Typical targets include routers, VPNs, self-hosted services (MobileIron, GitLab, Confluence, etc.), network appliances, B2B applications, and IoT devices.
+VulnCheck's Initial Access Community repository contains exploits and associated artifacts from our proprietary [Initial Access Intelligence](https://docs.vulncheck.com/products/initial-access-intelligence) product and community contributions. The typical focus of Initial Access is network-based vulnerabilities that don't require user interaction, with a strong preference for unauthenticated vulnerabilities. Typical targets include routers, VPNs, self-hosted services (MobileIron, GitLab, Confluence, etc.), network appliances, B2B applications, and IoT devices.
 
 Exploits are written in Go using VulnCheck's [go-exploit framework](https://github.com/vulncheck-oss/go-exploit). When possible, exploits include a target verifier and a version scanner. Initial Access is not just about exploits, though. We also care about discovery and detection. Alongside the exploits, we include, when possible:
 
