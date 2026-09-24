@@ -39,3 +39,8 @@ We'd also love PRs. We focus on exploit and vulnerability intelligence content. 
 - [Using Pull Requests](https://help.github.com/articles/about-pull-requests/)
 - [GitHub Help](https://help.github.com)
 
+## License
+
+This repository is published under the [Apache License 2.0](LICENSE). Contributions are released under the [0BSD license](https://opensource.org/license/0bsd).
+
+By submitting a contribution, you affirm that it is your original work, that you have the right to contribute it, and that you release it under the terms of the 0BSD license.
