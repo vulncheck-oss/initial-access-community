@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -68,23 +69,54 @@ type Artifact struct {
 
 var flagDirectory string
 
+type FileMatch struct {
+	Name     string
+	Prefix   string
+	Suffixes []string
+}
+
 var (
-	snortSuffix    = `.snort.rule`
-	suricataSuffix = `.suricata.rule`
-	yaraSuffix     = `.yara`
-	pcapPrefix     = `00-`
-	pcapSuffix     = `.pcap`
-	dockerPrefix   = `target-`
-	failed         = 0
+	sigmaFileMatch    = FileMatch{"sigma", "", []string{`.sigma.yml`}}
+	snortFileMatch    = FileMatch{"snort", "", []string{`.snort.rule`}}
+	suricataFileMatch = FileMatch{"suricata", "", []string{`.suricata.rule`}}
+	yaraFileMatch     = FileMatch{"yara", "", []string{`.yara`}}
+	pcapFileMatch     = FileMatch{"pcap", `00-`, []string{`.pcap`, `.pcapng`}}
+	dockerPrefix      = `target-`
+	failed            = 0
 )
 
-func exists(files []string, name string) bool {
+func checkFilePresence(files []string, entry Entry, isChain bool, settingValue bool, fileMatch FileMatch) bool {
+	matched := false
+	cveLower := strings.ToLower(entry.CVE)
 	for _, file := range files {
-		if strings.Contains(file, name) {
-			return true
+		if strings.Contains(file, fmt.Sprintf("%s/", cveLower)) {
+			for _, fileSuffix := range fileMatch.Suffixes {
+				if strings.HasSuffix(file, fileSuffix) {
+					matched = true
+					break
+				}
+			}
+
+			if matched {
+				break
+			}
 		}
 	}
-	return false
+	if settingValue != matched {
+		messageBody := fmt.Sprintf("%s - has %s marked as %s but `%s/*%s` ", entry.CVE, fileMatch.Name, strconv.FormatBool(settingValue), cveLower, fileMatch.Suffixes[0])
+		if matched {
+			messageBody += "was found"
+		} else {
+			messageBody += "was not found"
+		}
+		if isChain {
+			log.Printf("WARN: %s, but is in a chain", messageBody)
+		} else {
+			log.Printf("ERROR: %s", messageBody)
+			return false
+		}
+	}
+	return true
 }
 
 func main() {
@@ -171,121 +203,20 @@ func main() {
 				}
 			}
 
-			matched = false
-			for _, file := range files {
-				if strings.Contains(file, fmt.Sprintf("%s/", cveLower)) {
-					if strings.Contains(file, ".snort.rule") {
-						matched = true
-					}
-				}
+			if !checkFilePresence(files, entry, isChain, artifact.SigmaRule, sigmaFileMatch) {
+				failed++
 			}
-			if artifact.SnortRule {
-				if !matched {
-					if isChain {
-						log.Printf("WARN: %s - has snort marked as true but `%s/*%s` was not found, but is in a chain", entry.CVE, cveLower, snortSuffix)
-					} else {
-
-						log.Printf("ERROR: %s - has snort marked as true but `%s/*%s` was not found", entry.CVE, cveLower, snortSuffix)
-
-						failed++
-					}
-				}
-			} else {
-				if matched {
-					if isChain {
-						log.Printf("WARN: %s - has snort marked as false but `%s/*%s` was found, but is in a chain", entry.CVE, cveLower, snortSuffix)
-					} else {
-						log.Printf("ERROR: %s - has snort marked as false but `%s/*%s` was found", entry.CVE, cveLower, snortSuffix)
-						failed++
-					}
-				}
+			if !checkFilePresence(files, entry, isChain, artifact.SnortRule, snortFileMatch) {
+				failed++
 			}
-
-			matched = false
-			for _, file := range files {
-				if strings.Contains(file, fmt.Sprintf("%s/", cveLower)) {
-					if strings.Contains(file, suricataSuffix) {
-						matched = true
-					}
-				}
+			if !checkFilePresence(files, entry, isChain, artifact.SuricataRule, suricataFileMatch) {
+				failed++
 			}
-			if artifact.SuricataRule {
-				if !matched {
-					if isChain {
-						log.Printf("WARN: %s - has suricata marked as true but `%s/*%s` was not found, but is in chain", entry.CVE, cveLower, suricataSuffix)
-					} else {
-						log.Printf("ERROR: %s - has suricata marked as true but `%s/*%s` was not found", entry.CVE, cveLower, suricataSuffix)
-						failed++
-					}
-				}
-			} else {
-				if matched {
-					if isChain {
-						log.Printf("WARN: %s - has suricata marked as false but `%s/*%s` was found, but is in chain", entry.CVE, cveLower, suricataSuffix)
-					} else {
-						log.Printf("ERROR: %s - has suricata marked as false but `%s/*%s` was found", entry.CVE, cveLower, suricataSuffix)
-						failed++
-					}
-				}
+			if !checkFilePresence(files, entry, isChain, artifact.Yara, yaraFileMatch) {
+				failed++
 			}
-
-			matched = false
-			for _, file := range files {
-				if strings.Contains(file, fmt.Sprintf("%s/", cveLower)) {
-					if strings.Contains(file, ".yara") {
-						matched = true
-					}
-				}
-			}
-			if artifact.Yara {
-				if !matched {
-					if isChain {
-						log.Printf("WARN: %s - has yara marked as true but `%s/*%s` was not found, but is in chain", entry.CVE, cveLower, yaraSuffix)
-					} else {
-						log.Printf("ERROR: %s - has yara marked as true but `%s/*%s` was not found", entry.CVE, cveLower, yaraSuffix)
-						failed++
-					}
-				}
-			} else {
-				if matched {
-					if isChain {
-						log.Printf("WARN: %s - has yara marked as false but `%s/*%s` was found, but is in chain", entry.CVE, cveLower, yaraSuffix)
-					} else {
-						log.Printf("ERROR: %s - has yara marked as false but `%s/*%s` was found", entry.CVE, cveLower, yaraSuffix)
-						failed++
-					}
-				}
-			}
-
-			// pcap checks
-			matched = false
-			for _, file := range files {
-				if strings.Contains(file, fmt.Sprintf("%s/", cveLower)) {
-					if strings.Contains(file, pcapPrefix) {
-						if strings.Contains(file, pcapSuffix) {
-							matched = true
-						}
-					}
-				}
-			}
-			if artifact.Pcap {
-				if !matched {
-					if isChain {
-						log.Printf("WARN: %s - has pcaps marked as true but `%s/%s*%s` was not found, but is in a chain", entry.CVE, cveLower, pcapPrefix, pcapSuffix)
-					} else {
-						log.Printf("ERROR: %s - has pcaps marked as true but `%s/%s*%s` was not found", entry.CVE, cveLower, pcapPrefix, pcapSuffix)
-						failed++
-					}
-				}
-			} else {
-				if matched {
-					if isChain {
-						log.Printf("WARN: %s - has pcaps marked as false but `%s/%s*%s` was found, but is in a chain", entry.CVE, cveLower, pcapPrefix, pcapSuffix)
-					} else {
-						log.Printf("ERROR: %s - has pcaps marked as false but `%s/%s*%s` was found", entry.CVE, cveLower, pcapPrefix, pcapSuffix)
-						failed++
-					}
-				}
+			if !checkFilePresence(files, entry, isChain, artifact.Pcap, pcapFileMatch) {
+				failed++
 			}
 
 			matched = false
