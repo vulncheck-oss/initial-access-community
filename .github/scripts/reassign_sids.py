@@ -26,6 +26,15 @@ Counter file (.sid_counter):
 Usage:
     python reassign_sids.py --sid-file .sid_counter --changed-files f1 [f2 ...]
     python reassign_sids.py --sid-file .sid_counter --changed-files f1 --dry-run
+
+    # Print every rule file in the tree that still holds a placeholder SID.
+    # This is what the push-time workflow feeds back into --changed-files, and
+    # what the PR gate asserts is empty after a dry assignment.
+    python reassign_sids.py --list-placeholder-files
+
+    # Validate without writing anything: lint the PR's changed rule files, then
+    # dry-run the assignment the push job will perform. Used by the PR gate.
+    python reassign_sids.py --check --sid-file .sid_counter --changed-files f1 [f2 ...]
 """
 
 from __future__ import annotations
@@ -37,6 +46,13 @@ from pathlib import Path
 SID_PATTERN = re.compile(r'\bsid\s*:\s*(\d+)\s*;')
 MSG_PATTERN = re.compile(r'\bmsg\s*:\s*"([^"]+)"')
 SID_RANGE_START = 12_900_000  # SIDs below this are treated as unassigned
+# Upper bound of VulnCheck's allocated SID block. Mirrors sidMax in
+# vulncheck/ia-feed sid_test.go, which fails the feed build for any SID outside
+# [12700001, 12800001]. Keep the two in sync: this is the copy that gets to
+# refuse an assignment, the other one only gets to complain after the merge.
+SID_RANGE_END = 12_800_001
+
+RULE_SUFFIXES = ('.suricata.rule', '.snort.rule')
 
 
 # ---------------------------------------------------------------------------
@@ -64,6 +80,14 @@ def load_counter(sid_file: Path) -> int:
             file=sys.stderr,
         )
         sys.exit(1)
+    if counter >= SID_RANGE_END:
+        print(
+            f"Error: counter value {counter} in '{sid_file}' has reached the end of "
+            f"the allocated range ({SID_RANGE_END}). No further SIDs can be assigned "
+            f"until VulnCheck is allocated a new block.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
     return counter
 
 
@@ -77,6 +101,16 @@ def save_counter(sid_file: Path, value: int) -> None:
 
 def normalise_msg(msg: str) -> str:
     return re.sub(r'\s+', ' ', msg).strip().lower()
+
+
+def is_rule(entry: dict) -> bool:
+    """A parsed entry that is an actual rule, not a comment or a blank line."""
+    return not entry['comment'] and bool(''.join(entry['lines']).strip())
+
+
+def is_unassigned(sid: str | None) -> bool:
+    """True for a placeholder SID -- sid:1, sid:2, ... -- that needs assigning."""
+    return sid is not None and int(sid) < SID_RANGE_START
 
 
 def parse_rules(path: Path) -> list[dict]:
@@ -114,6 +148,26 @@ def parse_rules(path: Path) -> list[dict]:
         })
         i += 1
     return entries
+
+
+
+def discover_placeholder_files(root: Path = Path('.')) -> list[Path]:
+    """Every rule file under `root` that still holds at least one placeholder SID.
+
+    This is the single definition of "needs a SID". The push workflow used to
+    carry its own `grep -lE 'sid:[0-9]{1,7};'` copy of it, which disagreed with
+    SID_PATTERN over whitespace: a rule written `sid: 1;` was a placeholder to
+    this script but invisible to the grep, so the file was never passed in and
+    the placeholder rode the merge through to ia-feed. Both callers go through
+    here now so the two can no longer drift apart.
+    """
+    found = []
+    for path in sorted(root.rglob('*.rule')):
+        if not path.name.endswith(RULE_SUFFIXES):
+            continue
+        if any(is_unassigned(e['sid']) for e in parse_rules(path) if is_rule(e)):
+            found.append(path)
+    return found
 
 
 def check_duplicates(entries: list[dict], path: Path) -> list[str]:
@@ -192,11 +246,29 @@ def process_dir(
             print(e, file=sys.stderr)
         sys.exit(1)
 
+    # A placeholder rule is keyed by its msg: below, so a rule that has no msg:
+    # collides with every other msg-less rule in the same file under the key
+    # None -- the last one wins and the rest silently keep their sid:1. Refuse
+    # instead of dropping them on the floor.
+    unpairable = []
+    for entries, path, changed in ((sur_entries, suricata, sur_changed),
+                                   (snort_entries, snort, snort_changed)):
+        if not changed:
+            continue
+        for e in entries:
+            if is_rule(e) and is_unassigned(e['sid']) and e['msg_norm'] is None:
+                unpairable.append(
+                    f"  {path}:{e['start'] + 1}: rule has sid:{e['sid']} but no msg: "
+                    f"field, so it cannot be matched to its partner rule"
+                )
+    if unpairable:
+        print("ERROR: placeholder rules with no msg: field:", file=sys.stderr)
+        for u in unpairable:
+            print(u, file=sys.stderr)
+        sys.exit(1)
+
     # Rules needing a SID are those with any SID below the managed range.
     # Map msg_norm -> entry reference so each distinct rule is tracked individually.
-    def is_unassigned(sid: str | None) -> bool:
-        return sid is not None and int(sid) < SID_RANGE_START
-
     sur_new   = {e['msg_norm']: (i, e) for i, e in enumerate(sur_entries)   if sur_changed   and is_unassigned(e['sid'])}
     snort_new = {e['msg_norm']: (i, e) for i, e in enumerate(snort_entries) if snort_changed and is_unassigned(e['sid'])}
 
@@ -238,6 +310,14 @@ def process_dir(
             tag = "paired (reusing partner SID)"
         else:
             counter += 1
+            if counter > SID_RANGE_END:
+                print(
+                    f"Error: assigning a SID for \"{msg_norm}\" would produce {counter}, "
+                    f"past the end of the allocated range ({SID_RANGE_END}). ia-feed's "
+                    f"sid_test.go rejects it. A new SID block is needed.",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
             new_sid = counter
             if in_sur_new and in_snort_new:
                 tag = "paired (both changed)"
@@ -265,6 +345,123 @@ def process_dir(
 
 
 # ---------------------------------------------------------------------------
+# Pre-merge validation
+# ---------------------------------------------------------------------------
+
+def lint_changed_files(paths: list[Path]) -> list[str]:
+    """Per-rule checks on the rule files a PR touches.
+
+    Everything here is something that, left alone, surfaces only after the merge
+    -- either as a failed reassign-sids run on main (placeholders never get
+    replaced) or as a red sid_test.go in ia-feed once the placeholder has been
+    flattened into vulncheck.*.rules.
+    """
+    errors = []
+    for path in paths:
+        if not path.exists():           # deleted in the PR
+            continue
+        if not path.name.endswith(RULE_SUFFIXES):
+            continue
+        for e in parse_rules(path):
+            if not is_rule(e):
+                continue
+            ln = e['start'] + 1
+            if e['sid'] is None:
+                errors.append(
+                    f"  {path}:{ln}: rule has no sid: field. It will never be "
+                    f"assigned one, and Suricata/Snort reject it in ia-feed."
+                )
+                continue
+            sid = int(e['sid'])
+            if is_unassigned(sid):
+                if e['msg_norm'] is None:
+                    errors.append(
+                        f"  {path}:{ln}: placeholder sid:{sid} on a rule with no "
+                        f"msg: field. reassign_sids.py pairs rules by msg:, so this "
+                        f"one cannot be assigned a real SID."
+                    )
+                continue
+            if sid > SID_RANGE_END:
+                errors.append(
+                    f"  {path}:{ln}: sid:{sid} is past the end of the allocated "
+                    f"range [{SID_RANGE_START + 1}, {SID_RANGE_END}]. ia-feed's "
+                    f"sid_test.go fails on it."
+                )
+    return errors
+
+
+def run_check(changed: list[Path], sid_file: Path) -> None:
+    """Assert a PR can be merged without breaking SID assignment downstream.
+
+    Two phases, in the order the damage happens: lint what the PR changed, then
+    dry-run the exact assignment reassign-sids.yml will perform on main.
+    """
+    print("== Phase 1: linting changed rule files ==")
+    rule_files = [f for f in changed if f.name.endswith(RULE_SUFFIXES)]
+    if not rule_files:
+        print("  no rule files changed")
+    else:
+        for f in rule_files:
+            print(f"  {f}")
+    errors = lint_changed_files(rule_files)
+    if errors:
+        print("\nERROR: rule problems that block SID assignment:", file=sys.stderr)
+        for e in errors:
+            print(e, file=sys.stderr)
+        sys.exit(1)
+    print("  ok")
+
+    # Duplicate msg: in a file that still holds a placeholder is fatal, and
+    # phase 2 fails on it below -- that is the case that breaks assignment on
+    # main. A duplicate in a file whose SIDs are all assigned breaks nothing
+    # today, because reassign-sids.yml never passes such a file to
+    # check_duplicates() either. It is still worth saying out loud: the next PR
+    # that adds a placeholder SID to that file cannot be assigned until the
+    # duplicate is gone, and existing_sids() pairs by msg, so the placeholder
+    # could reuse the wrong partner SID. Warn rather than fail -- ~54 files in
+    # the corpus carry intentional duplicate msgs (the HTTP/HTTPS rule
+    # variants), and blocking an unrelated edit to one of them helps nobody.
+    warnings = []
+    for path in rule_files:
+        if not path.exists() or not path.name.endswith(RULE_SUFFIXES):
+            continue
+        entries = parse_rules(path)
+        if any(is_unassigned(e['sid']) for e in entries if is_rule(e)):
+            continue
+        warnings.extend(check_duplicates(entries, path))
+    if warnings:
+        print("\nWARNING: duplicate msg fields in files whose SIDs are already "
+              "assigned. Nothing fails now, but a future placeholder SID in "
+              "these files cannot be assigned until the duplicate is resolved:")
+        for w in warnings:
+            print(w)
+
+    print("\n== Phase 2: dry-run of the post-merge SID assignment ==")
+    placeholder_files = discover_placeholder_files()
+    if not placeholder_files:
+        print("  no placeholder SIDs anywhere in the tree, nothing to assign")
+        return
+    print("  files holding placeholder SIDs:")
+    for f in placeholder_files:
+        print(f"    {f}")
+
+    # Same grouping and the same process_dir() the push job runs, so a duplicate
+    # msg:, an un-pairable rule or an exhausted counter fails here with the
+    # message it would have produced on main -- except here it blocks the merge.
+    dirs: dict[Path, dict[str, Path]] = {}
+    for f in placeholder_files:
+        f = f.resolve()
+        key = 'suricata' if f.name.endswith('.suricata.rule') else 'snort'
+        dirs.setdefault(f.parent, {})[key] = f
+
+    counter = load_counter(sid_file)
+    for rule_dir in sorted(dirs):
+        print(f"\nProcessing: {rule_dir}  (changed: {', '.join(sorted(dirs[rule_dir]))})")
+        counter = process_dir(rule_dir, dirs[rule_dir], counter, dry_run=True)
+    print(f"\nOK -- assignment would succeed, counter would land at {counter}")
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 
@@ -273,11 +470,36 @@ def main() -> None:
         description='Assign SIDs to new (sid:0) Suricata/Snort rules.')
     parser.add_argument('--sid-file', type=Path, default=Path('.sid_counter'),
                         help='Persistent SID counter file (default: .sid_counter)')
-    parser.add_argument('--changed-files', nargs='+', type=Path, required=True,
+    parser.add_argument('--changed-files', nargs='+', type=Path, default=[],
                         help='The specific rule files changed in this push')
     parser.add_argument('--dry-run', action='store_true',
                         help='Show what would change without writing files or updating the counter')
+    parser.add_argument('--list-placeholder-files', action='store_true',
+                        help='Print every rule file still holding a placeholder SID, one per '
+                             'line, and exit. Used by reassign-sids.yml to build --changed-files '
+                             'and by the PR gate to assert none are left.')
+    parser.add_argument('--check', action='store_true',
+                        help='Validate only: lint --changed-files, then dry-run the assignment '
+                             'the push job will perform. Writes nothing. Used by the PR gate.')
     args = parser.parse_args()
+
+    # Keep stdout in step with stderr. Both land in the same CI log, and a
+    # block of buffered progress output arriving after the error it led up to
+    # makes the log hard to read.
+    sys.stdout.reconfigure(line_buffering=True)
+
+    if args.list_placeholder_files:
+        for f in discover_placeholder_files():
+            print(f)
+        sys.exit(0)
+
+    if args.check:
+        run_check(args.changed_files, args.sid_file)
+        sys.exit(0)
+
+    if not args.changed_files:
+        parser.error('--changed-files is required unless --check or '
+                     '--list-placeholder-files is given')
 
     if args.dry_run:
         print("DRY-RUN mode — no files will be modified\n")

@@ -10,10 +10,99 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    # The runner's shell probe doesn't find bash in the builder image, so
+    # container steps default to `sh -e {0}` (dash) and every bashism below
+    # -- pipefail, arrays, mapfile, [[ ]] -- is a syntax error. The image is
+    # Debian-based and has bash (ia-feed's merge job calls `bash -x`
+    # directly), so name it. Spelled out rather than `shell: bash`, which
+    # expands to `-eo pipefail` and would newly fail the pre-existing
+    # `find | grep -Ev | while` steps below on the no-match case, where
+    # grep exits 1 and that *is* the passing outcome. This is the default
+    # these steps ran under before the job moved into the container; the
+    # steps that want pipefail set it themselves.
+    defaults:
+      run:
+        shell: bash -e {0}
+    # Same image ia-feed's merge job uses, so Suricata/Snort here and there
+    # agree. Pre-baked; nothing to apt install.
+    container:
+      image: ghcr.io/vulncheck/ia-feed-builder:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
     - uses: actions/checkout@v6.0.2
       with:
+        fetch-depth: 0
         persist-credentials: false
+
+    - run: git config --global --add safe.directory '*'
+
+    - name: Resolve Python
+      id: py
+      run: |
+        PY="$(command -v python3 || command -v python)"
+        if [ -z "$PY" ]; then
+          echo "::error::no python interpreter in the builder image"
+          exit 1
+        fi
+        echo "bin=$PY" >> "$GITHUB_OUTPUT"
+
+    - name: Collect changed rule files
+      id: changed
+      run: |
+        set -euo pipefail
+        BASE="${GITHUB_BASE_REF:-main}"
+        {
+          echo 'files<<EOF'
+          git diff --name-only --diff-filter=d "origin/$BASE...HEAD" \
+            -- '*.suricata.rule' '*.snort.rule'
+          echo 'EOF'
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Validate SIDs
+      env:
+        PY: ${{ steps.py.outputs.bin }}
+        CHANGED: ${{ steps.changed.outputs.files }}
+      run: |
+        set -euo pipefail
+        ARGS=(--check --sid-file .sid_counter)
+        if [ -n "${CHANGED//[[:space:]]/}" ]; then
+          mapfile -t FILES <<< "$CHANGED"
+          ARGS+=(--changed-files "${FILES[@]}")
+        fi
+        "$PY" .github/scripts/reassign_sids.py "${ARGS[@]}"
+
+    # Throwaway: writes into the runner's checkout so the steps below see the
+    # SIDs that will actually ship. reassign-sids.yml still does this for real,
+    # once, on push to main.
+    - name: Assign SIDs
+      env:
+        PY: ${{ steps.py.outputs.bin }}
+      run: |
+        set -euo pipefail
+        LIST="$("$PY" .github/scripts/reassign_sids.py --list-placeholder-files)"
+        if [ -z "$LIST" ]; then
+          echo "no rule files with placeholder SIDs found"
+          exit 0
+        fi
+        mapfile -t FILES <<< "$LIST"
+        printf '  %s\n' "${FILES[@]}"
+        "$PY" .github/scripts/reassign_sids.py \
+          --sid-file .sid_counter \
+          --changed-files "${FILES[@]}"
+
+    - name: Assert No Placeholder SIDs Survive
+      env:
+        PY: ${{ steps.py.outputs.bin }}
+      run: |
+        set -euo pipefail
+        LEFT="$("$PY" .github/scripts/reassign_sids.py --list-placeholder-files)"
+        if [ -n "$LEFT" ]; then
+          echo "::error::placeholder SIDs would survive the merge in these files:"
+          printf '%s\n' "$LEFT"
+          exit 1
+        fi
 
     - name: Find Feed SID Duplicates
       run: |
@@ -28,6 +117,16 @@ jobs:
         if [ $exit_status -eq 1 ]; then
             exit 1
         fi
+
+    # Copy of merge-initial-access.yml's engine validation in ia-feed, which is
+    # the only place a rule is parsed today -- after it is already on main.
+    - name: Validate Rules With Suricata and Snort
+      run: |
+        set -euo pipefail
+        cat ./feed/vulncheck.snort.rules > /etc/snort/rules/local.rules
+        ANY_PCAP="$(readlink -f "$(find ./feed/ -name '*.pcap' -print -quit)")"
+        suricata -k none -v -T -S ./feed/vulncheck.suricata.rules || exit 1
+        snort -r "$ANY_PCAP" -c /etc/snort/snort.conf -l /tmp/ -A console 2> /tmp/snort.log || (grep -A 1000 'Initializing rule chains...' /tmp/snort.log && (grep "ERROR: " /tmp/snort.log && exit 1))
 
     - name: Find Incorrectly Named PCAPs
       run: |
