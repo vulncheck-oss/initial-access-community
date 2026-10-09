@@ -78,6 +78,11 @@ var (
 	flagDirectory string
 	flagEntryIDs  stringSlice
 	flagOffline   bool
+
+	flagSkipRuleMatch  bool
+	flagSnortEtc       string
+	flagSnortLib       string
+	flagSuricataConfig string
 )
 
 type FileMatch struct {
@@ -155,6 +160,12 @@ func main() {
 	flag.StringVar(&flagDirectory, "dir", "./feed", "Directory to read feed from")
 	flag.Var(&flagEntryIDs, "entry-id", "An entry ID (CVE) to process from the feed (repeatable)")
 	flag.BoolVar(&flagOffline, "offline", false, "skip online checks (disables the docker-compose amd64 platform check)")
+	flag.BoolVar(&flagSkipRuleMatch, "skip-rule-match", false, "skip replaying unencrypted pcaps through the suricata/snort rules (needs both engines installed)")
+	// Path defaults match the ia-feed-builder CI image (vulncheck/ia-infra
+	// tools/ia-feed-builder), which builds both engines from source.
+	flag.StringVar(&flagSnortEtc, "snort-etc", "/etc/snort", "directory holding snort's classification.config, reference.config and unicode.map")
+	flag.StringVar(&flagSnortLib, "snort-lib", "/usr/local/lib", "directory holding snort's snort_dynamicpreprocessor/ and snort_dynamicengine/")
+	flag.StringVar(&flagSuricataConfig, "suricata-config", "/usr/local/etc/suricata/suricata.yaml", "suricata.yaml used for rule replay")
 
 	skiplist := map[string]string{
 		"CVE-2021-44228": "Multitarget CVE does not map cleanly to predictable paths",
@@ -216,6 +227,8 @@ func main() {
 		total_failures += lintEntryFrontmatter(flagDirectory, dirEntry.Name())
 		total_failures += lintDocker(flagDirectory, dirEntry.Name())
 		total_failures += lintPcap(flagDirectory, dirEntry.Name())
+		total_failures += lintGoMod(flagDirectory, dirEntry.Name())
+		total_failures += lintRuleMatch(flagDirectory, dirEntry.Name())
 	}
 	for id, scanned := range requested {
 		if !scanned {
@@ -259,6 +272,10 @@ func lintEntryFrontmatter(dir, entryID string) int {
 		future := time.Now().Add(time.Hour * 24 * 3)
 		if t.After(future) {
 			log.Printf("ERROR: %s - Date is too far in the future: %s", entry.CVE, artifact.DateAdded)
+			failed++
+		}
+		if len(artifact.Product) == 0 {
+			log.Printf("ERROR: %s - 'product' was not populated", entry.CVE)
 			failed++
 		}
 		if len(artifact.MitreAttackTechniques) == 0 {

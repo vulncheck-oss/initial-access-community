@@ -47,7 +47,7 @@ func DoValidateTarget(conf *config.Config) bool {
 		return false
 	}
 
-	resp, body, ok := protocol.HTTPGetCache(conf.GenerateURL("/"))
+	resp, body, ok := protocol.HTTPGetCache(conf.GenerateURL(""))
 	if !ok || resp.StatusCode != http.StatusOK {
 		return false
 	}
