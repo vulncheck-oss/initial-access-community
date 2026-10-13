@@ -83,6 +83,8 @@ var (
 	flagSnortEtc       string
 	flagSnortLib       string
 	flagSuricataConfig string
+	flagBaseRef        string
+	flagFixRules       bool
 )
 
 type FileMatch struct {
@@ -166,6 +168,8 @@ func main() {
 	flag.StringVar(&flagSnortEtc, "snort-etc", "/etc/snort", "directory holding snort's classification.config, reference.config and unicode.map")
 	flag.StringVar(&flagSnortLib, "snort-lib", "/usr/local/lib", "directory holding snort's snort_dynamicpreprocessor/ and snort_dynamicengine/")
 	flag.StringVar(&flagSuricataConfig, "suricata-config", "/usr/local/etc/suricata/suricata.yaml", "suricata.yaml used for rule replay")
+	flag.StringVar(&flagBaseRef, "base-ref", "", "git ref the PR is based on; rules that already carry a real SID there must keep it (empty skips the check)")
+	flag.BoolVar(&flagFixRules, "fix-rules", false, "rewrite the entries' rule files with every available autofix applied before linting them (local use; never in CI)")
 
 	skiplist := map[string]string{
 		"CVE-2021-44228": "Multitarget CVE does not map cleanly to predictable paths",
@@ -199,6 +203,15 @@ func main() {
 		log.Fatal(err)
 	}
 
+	if flagBaseRef != "" {
+		ref, err := loadBaseRef(flagDirectory, flagBaseRef)
+		if err != nil {
+			log.Fatalf("ERROR: %v", err)
+		}
+		ruleBaseRef = ref
+	}
+	buildFeedSIDIndex(flagDirectory)
+
 	// Allow aggregating errors to allow fixing of multiple issues
 	for _, dirEntry := range dirEntries {
 		if !dirEntry.IsDir() {
@@ -226,6 +239,7 @@ func main() {
 
 		total_failures += lintEntryFrontmatter(flagDirectory, dirEntry.Name())
 		total_failures += lintDocker(flagDirectory, dirEntry.Name())
+		total_failures += lintRules(flagDirectory, dirEntry.Name())
 		total_failures += lintPcap(flagDirectory, dirEntry.Name())
 		total_failures += lintGoMod(flagDirectory, dirEntry.Name())
 		total_failures += lintRuleMatch(flagDirectory, dirEntry.Name())

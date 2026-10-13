@@ -5,6 +5,7 @@ go 1.25.0
 require (
 	github.com/adrg/frontmatter v0.2.0
 	github.com/gopacket/gopacket v1.7.3
+	github.com/zeroSteiner/idsrule v0.2.0
 	go.yaml.in/yaml/v3 v3.0.5
 )
 
