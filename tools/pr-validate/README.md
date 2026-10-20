@@ -31,9 +31,10 @@ Findings are logged as `ERROR: <ENTRY> - <message>` or `WARN: <ENTRY> - <message
 
 ## Rule files
 
-The `*.suricata.rule` and `*.snort.rule` files of an entry, including sub-packages, are checked in three ways:
-- **Linting:** by [idsrule](https://github.com/zeroSteiner/idsrule) and by the VulnCheck checks in `rulecheck.go`. Together they enforce the mechanically checkable parts of the vc-iai `style-rules` skill. Snort/Suricata parity (§4), `flowbits:noalert` (§3) and the buffer and technique choices (§14, §16) still need a reviewer.
-- **Replay (`rule-pcap-match`):** every `*-unencrypted.pcap` or `*-unencrypted.pcapng` in a rule file's directory must make every rule file in that directory alert. A directory with rules but no such capture only warns.
+The `*.suricata.rule` and `*.snort.rule` files of an entry, including sub-packages, are checked in four ways:
+- **Linting:** by [idsrule](https://github.com/zeroSteiner/idsrule) and by the VulnCheck checks in `rulecheck.go`. Together they enforce the mechanically checkable parts of the vc-iai `style-rules` skill. `flowbits:noalert` (§3) and the buffer and technique choices (§14, §16) still need a reviewer.
+- **Parity (`vc-rule-parity`):** an entry's `.suricata.rule` and its `.snort.rule` twin, paired by name, must agree on rule count and on each rule's msg, classtype and flowbits actions (§4). The two differ only in engine syntax, so a divergence is a bug in one file. The pair is skipped when either file uses a Suricata-only feature such as base64 operations, which §4 allows to diverge.
+- **Replay (`rule-pcap-match`):** every `*-unencrypted.pcap` or `*-unencrypted.pcapng` in a rule file's directory must make every rule file in that directory alert, and every rule must alert on at least one of those captures (style-rules §21). A rule whose msg contains `variant` (any case), such as `(Metasploit Variant)`, is exempt, as is a rule that cannot alert (`flowbits:noalert` or `noalert`). A directory with rules but no such capture only warns.
 - **Frontmatter:** the README flags `suricataRule` and `snortRule` must match the files.
 
 ### Fixing a failing entry
@@ -76,15 +77,18 @@ Policy:
 | `vc-reference-cve` | error | the msg's CVE has a `reference:cve,CVE-…`, and cve references are well formed |
 | `vc-classtype` | error | classtype present and allowed (§11, plus `targeted-activity`) |
 | `vc-classtype-admin` | warning | `attempted-admin`/`successful-admin` must be privilege escalation (§11) |
+| `vc-flow-established` | error | every rule tracks an established flow (`flow:...,established`) |
 | `vc-flowbits-name` | error | flowbits are named `vc-cve-YYYY-NNNNN`, optionally with a `-stage` suffix (§1) |
 | `vc-flowbits-unset` | error | a tested flowbit is set in the same file (§1) |
 | `vc-success-impact` | error | Success rules end their metadata with `impact successful-exploitation`, and only they carry it (§5) |
 | `vc-success-direction` | error | `impact successful-exploitation` sits on a rule matching the server response (§5) |
+| `vc-success-classtype` | error | a success rule upgrades an `attempted-*` classtype to `successful-*` (§11) |
 | `vc-no-comments` | error | no comments in rule files (§8) |
 | `vc-option-per-line` | error | options start on the line after the header, one per line; a content or pcre keeps its modifiers, a sticky buffer may share its line with its first match, and sid shares a line with rev (§12) |
 | `vc-sid-rev-line` | error | sid and rev share a line (§12) |
 | `vc-sid-placeholder-sequence` | warning | placeholders run `sid:1`, `sid:2`, ...; a repeated placeholder is an error (§6) |
 | `vc-no-fast-pattern` | error | no `fast_pattern` (§10) |
+| `vc-content-hex` | error | a content does not hex-encode a printable ASCII byte it could carry literally (§28) |
 | `vc-pcre-buffer-flag` | error | Suricata pcre does not pick its buffer with a flag (§9) |
 | `vc-snort-pcre-flag` | error | Snort `http_*` modifiers do not follow a pcre; use the pcre flag (§13) |
 | `vc-pcre-anchor` | error | every pcre has a content in its buffer before it (§13) |
@@ -97,9 +101,11 @@ Policy:
 | `vc-uri-path-depth` | error | the path anchor's `depth` equals the decoded path length (autofixable) and it has no nonzero `offset` (§15). On the path anchor it replaces idsrule's `content-depth-too-short` |
 | `vc-tcp-unbounded-content` | warning | raw tcp/udp/ip content is bounded by a buffer, offset/depth or distance/within, unless the rule has `isdataat`, `bsize` or `dsize` (§18) |
 | `vc-snort-put-body` | warning | Snort `http_client_body` is not used for PUT bodies |
+| `vc-sticky-buffer-scope` | error | a `file_data`/`pkt_data`/`base64_data` setter is followed by a content, pcre or byte_* that searches it |
 | `vc-deployment-metadata` | error | deployment metadata matches `targetEncryptedComms`, which must be set (§7): `either` → Datacenter and SSLDecrypt, `no` → Datacenter, `yes` → SSLDecrypt |
 | `vc-encrypted-pcap` | error | a rule deployed with SSLDecrypt has an encrypted capture (`NN-exploited-encrypted.pcap` or `NN-exploit-attempt-encrypted.pcap`, or `.pcapng`) beside it (§7) |
 | `vc-sid-preserved` | error | with `-base-ref`: a rule that CI assigned a SID keeps it, and real SIDs are never invented (§6) |
+| `vc-rule-parity` | error | the `.suricata.rule` and `.snort.rule` twins agree on rule count and each rule's msg, classtype and flowbits actions (§4) |
 
 ## Tests
 

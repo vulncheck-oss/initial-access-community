@@ -14,6 +14,7 @@ import (
 	"github.com/adrg/frontmatter"
 	"github.com/zeroSteiner/idsrule"
 	"github.com/zeroSteiner/idsrule/diag"
+	"github.com/zeroSteiner/idsrule/source"
 )
 
 // The VulnCheck SID block. Rules below sidPlaceholderBelow carry a
@@ -28,6 +29,9 @@ const (
 
 // RuleRuleLint identifies rule files pr-validate could not lint.
 const RuleRuleLint = "rule-lint"
+
+// RuleParity identifies cross-engine rule-parity findings.
+const RuleParity = "vc-rule-parity"
 
 // ruleFileSuffixes are the rule files lintRules checks.
 var ruleFileSuffixes = []string{".suricata.rule", ".snort.rule"}
@@ -169,7 +173,109 @@ func lintRules(dir, entryID string) int {
 		}
 	}
 
+	failed += lintRuleParity(dir, upperID, files)
+
 	return failed
+}
+
+// lintRuleParity pairs an entry's rule files by directory and base name
+// (cve-x.suricata.rule with cve-x.snort.rule) and reports where the twins
+// diverge. It returns the number of errors.
+func lintRuleParity(dir, upperID string, files []string) int {
+	present := make(map[string]bool, len(files))
+	for _, f := range files {
+		present[f] = true
+	}
+	failed := 0
+	for _, f := range files {
+		if !strings.HasSuffix(f, ".suricata.rule") {
+			continue
+		}
+		snort := strings.TrimSuffix(f, ".suricata.rule") + ".snort.rule"
+		if !present[snort] {
+			continue
+		}
+		diags, err := parityDiagnostics(f, snort)
+		if err != nil {
+			log.Printf("ERROR: %s - unable to compare %s with %s: %v [%s]", upperID, relPath(dir, f), relPath(dir, snort), err, RuleParity)
+			failed++
+
+			continue
+		}
+		diag.Sort(diags)
+		for _, d := range diags {
+			if logRuleDiagnostic(dir, upperID, d) {
+				failed++
+			}
+		}
+	}
+
+	return failed
+}
+
+// parityDiagnostics compares a Suricata rule file with its Snort twin and
+// returns a finding for each way they diverge (style-rules §4): a different
+// rule count, or a per-index difference in msg, classtype or flowbits actions.
+// The pair is rule-for-rule equivalent by design, differing only in engine
+// syntax, so a divergence is a bug in one file that is invisible without
+// diffing them. Findings anchor in the Suricata file.
+func parityDiagnostics(suriPath, snortPath string) ([]idsrule.Diagnostic, error) {
+	suriSrc, err := os.ReadFile(suriPath)
+	if err != nil {
+		return nil, err
+	}
+	snortSrc, err := os.ReadFile(snortPath)
+	if err != nil {
+		return nil, err
+	}
+	suriTree, _ := idsrule.Parse(suriPath, suriSrc)
+	snortTree, _ := idsrule.Parse(snortPath, snortSrc)
+
+	// A feature that exists in Suricata but not reliably in Snort (base64
+	// operations) lets the twins diverge in count and pairing (style-rules §4),
+	// so skip the comparison when either file uses one.
+	if usesSuricataOnlyFeature(suriTree) || usesSuricataOnlyFeature(snortTree) {
+		return nil, nil
+	}
+
+	b := diag.Builder{File: suriPath, Lines: suriTree.Lines()}
+	suri, snort := suriTree.Rules(), snortTree.Rules()
+
+	var out []idsrule.Diagnostic
+	if len(suri) != len(snort) {
+		span := source.Span{}
+		if len(suri) > 0 {
+			span = suri[0].Header.Span()
+		}
+		out = append(out, b.New(RuleParity, idsrule.SeverityError, span,
+			"%s has %d rule(s) but %s has %d; every rule is written for both engines",
+			filepath.Base(suriPath), len(suri), filepath.Base(snortPath), len(snort)))
+
+		return out, nil
+	}
+	for i := range suri {
+		s, n := suri[i], snort[i]
+		span := s.Header.Span()
+		sMsg, sMsgOpt := ruleMsg(s)
+		if sMsgOpt != nil {
+			span = sMsgOpt.Span()
+		}
+		nMsg, _ := ruleMsg(n)
+		if sMsg != nMsg {
+			out = append(out, b.New(RuleParity, idsrule.SeverityError, span,
+				"rule %d msg differs across engines: suricata %q, snort %q", i+1, sMsg, nMsg))
+		}
+		if sc, nc := ruleClasstypes(s), ruleClasstypes(n); !slices.Equal(sc, nc) {
+			out = append(out, b.New(RuleParity, idsrule.SeverityError, span,
+				"rule %d classtype differs across engines: suricata %v, snort %v", i+1, sc, nc))
+		}
+		if sf, nf := ruleFlowbitActions(s), ruleFlowbitActions(n); !slices.Equal(sf, nf) {
+			out = append(out, b.New(RuleParity, idsrule.SeverityError, span,
+				"rule %d flowbits actions differ across engines: suricata %v, snort %v", i+1, sf, nf))
+		}
+	}
+
+	return out, nil
 }
 
 // loadRuleEntryInfo reads what the entry-level rule checks need from the

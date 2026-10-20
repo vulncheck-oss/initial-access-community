@@ -34,15 +34,18 @@ var ruleChecks = []ruleCheck{
 	{"vc-reference-cve", idsrule.SeverityError, checkReferenceCVE},
 	{"vc-classtype", idsrule.SeverityError, checkClasstype},
 	{"vc-classtype-admin", idsrule.SeverityWarning, checkClasstypeAdmin},
+	{"vc-flow-established", idsrule.SeverityError, checkFlowEstablished},
 	{"vc-flowbits-name", idsrule.SeverityError, checkFlowbitsName},
 	{"vc-flowbits-unset", idsrule.SeverityError, checkFlowbitsUnset},
 	{"vc-success-impact", idsrule.SeverityError, checkSuccessImpact},
 	{"vc-success-direction", idsrule.SeverityError, checkSuccessDirection},
+	{"vc-success-classtype", idsrule.SeverityError, checkSuccessClasstype},
 	{"vc-no-comments", idsrule.SeverityError, checkNoComments},
 	{"vc-option-per-line", idsrule.SeverityError, checkOptionPerLine},
 	{"vc-sid-rev-line", idsrule.SeverityError, checkSIDRevLine},
 	{"vc-sid-placeholder-sequence", idsrule.SeverityWarning, checkPlaceholderSequence},
 	{"vc-no-fast-pattern", idsrule.SeverityError, checkNoFastPattern},
+	{"vc-content-hex", idsrule.SeverityError, checkContentHex},
 	{"vc-pcre-buffer-flag", idsrule.SeverityError, checkPCREBufferFlag},
 	{"vc-snort-pcre-flag", idsrule.SeverityError, checkSnortPCREFlag},
 	{"vc-pcre-anchor", idsrule.SeverityError, checkPCREAnchor},
@@ -55,6 +58,7 @@ var ruleChecks = []ruleCheck{
 	{"vc-uri-path-depth", idsrule.SeverityError, checkURIPathDepth},
 	{"vc-tcp-unbounded-content", idsrule.SeverityWarning, checkTCPUnboundedContent},
 	{"vc-snort-put-body", idsrule.SeverityWarning, checkSnortPUTBody},
+	{"vc-sticky-buffer-scope", idsrule.SeverityError, checkStickyBufferScope},
 	{"vc-deployment-metadata", idsrule.SeverityError, checkDeploymentMetadata},
 	{"vc-encrypted-pcap", idsrule.SeverityError, checkEncryptedPcap},
 }
@@ -190,6 +194,59 @@ func ruleFlow(r *cst.Rule) []string {
 	}
 
 	return f.Tokens
+}
+
+// suricataOnlyFeatures are detection features that exist in Suricata but not
+// reliably in Snort 2.9, so style-rules §4 lets the twins diverge where one is
+// in use. base64 operations are the canonical example: Snort's base64_decode
+// is unreliable, so the Snort twin routinely works around it or drops the rule,
+// which shifts the rule count and the per-rule pairing.
+var suricataOnlyFeatures = map[string]bool{
+	"base64_decode": true,
+	"base64_data":   true,
+}
+
+// usesSuricataOnlyFeature reports whether any rule in tree uses a feature with
+// no reliable Snort equivalent, which parity forgives (style-rules §4).
+func usesSuricataOnlyFeature(tree *cst.File) bool {
+	if tree == nil {
+		return false
+	}
+	for _, r := range tree.Rules() {
+		for _, o := range r.Options() {
+			if suricataOnlyFeatures[o.Name()] {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// ruleClasstypes returns r's classtype values, sorted, for cross-engine
+// comparison.
+func ruleClasstypes(r *cst.Rule) []string {
+	var out []string
+	for _, o := range r.OptionsNamed("classtype") {
+		out = append(out, logical(o))
+	}
+	slices.Sort(out)
+
+	return out
+}
+
+// ruleFlowbitActions returns the verbs of r's flowbits options, sorted, for
+// cross-engine comparison.
+func ruleFlowbitActions(r *cst.Rule) []string {
+	var out []string
+	for _, o := range r.OptionsNamed("flowbits") {
+		if fb, err := value.ParseFlowbits(logical(o)); err == nil {
+			out = append(out, fb.Verb)
+		}
+	}
+	slices.Sort(out)
+
+	return out
 }
 
 // ruleSIDValue returns the sid of r and its option.
@@ -450,6 +507,24 @@ func checkClasstypeAdmin(c *ruleCheckCtx) {
 	}
 }
 
+// checkFlowEstablished holds every rule to an established flow: a feed rule
+// matches a step of an exploit mid-session, so it keys on a flow the engine has
+// already seen traffic for, never a stray packet. The convention is a flow
+// option carrying the established token (flow:to_server,established or
+// flow:from_server,established).
+func checkFlowEstablished(c *ruleCheckCtx) {
+	for _, r := range c.tree.Rules() {
+		if slices.Contains(ruleFlow(r), "established") {
+			continue
+		}
+		span := r.Header.Span()
+		if o := r.Option("flow"); o != nil {
+			span = o.Span()
+		}
+		c.report(span, "a rule must track an established flow; add the established token to flow (flow:to_server,established)")
+	}
+}
+
 // -- flowbits and success rules (skill §1, §5) -------------------------------
 
 // flowbitNames returns the names of a flowbits value, splitting Suricata's
@@ -577,6 +652,56 @@ func (c *ruleCheckCtx) matchesResponse(r *cst.Rule) bool {
 	return false
 }
 
+// hasFlowbitsIsset reports whether r tests a flowbit, the structural tell of
+// the success half of an attempt/success pair.
+func hasFlowbitsIsset(r *cst.Rule) bool {
+	for _, o := range r.OptionsNamed("flowbits") {
+		if fb, err := value.ParseFlowbits(logical(o)); err == nil && fb.Verb == "isset" {
+			return true
+		}
+	}
+
+	return false
+}
+
+// isSuccessSide reports whether r is the success half of a pair: either signal
+// is enough, a tested flowbit (structural) or a " Success" msg (declared).
+func isSuccessSide(r *cst.Rule) bool {
+	if hasFlowbitsIsset(r) {
+		return true
+	}
+	msg, _ := ruleMsg(r)
+
+	return strings.HasSuffix(msg, " Success")
+}
+
+// successClasstype maps an attempt classtype to the one a success rule uses
+// instead.
+var successClasstype = map[string]string{
+	"attempted-admin": "successful-admin",
+	"attempted-user":  "successful-user",
+	"attempted-dos":   "successful-dos",
+	"attempted-recon": "successful-recon-limited or successful-recon-largescale",
+}
+
+// checkSuccessClasstype holds a success rule to a successful-* classtype
+// (skill §11): the rule fires because the exploit worked, so it must not keep
+// the attempt's classtype, which is how the operator's console ranks the alert.
+func checkSuccessClasstype(c *ruleCheckCtx) {
+	for _, r := range c.tree.Rules() {
+		if !isSuccessSide(r) {
+			continue
+		}
+		o := r.Option("classtype")
+		if o == nil {
+			continue // vc-classtype reports a missing classtype
+		}
+		if want, ok := successClasstype[logical(o)]; ok {
+			c.report(o.Span(), "a success rule fires because the exploit worked; use %s, not %s", want, logical(o))
+		}
+	}
+}
+
 // -- layout (skill §8, §12, §6) -----------------------------------------------
 
 func checkNoComments(c *ruleCheckCtx) {
@@ -691,6 +816,47 @@ func checkPlaceholderSequence(c *ruleCheckCtx) {
 }
 
 // -- content and pcre (skill §9, §10, §13, §15, §17, §18) --------------------
+
+// contentHexRe matches a |..| hex run inside a content value.
+var contentHexRe = regexp.MustCompile(`\|([0-9a-fA-F]{2}(?:\s+[0-9a-fA-F]{2})*)\|`)
+
+// hexMustEncode are the bytes a content can only carry hex-encoded, so their
+// |XX| is never unnecessary: the quote and semicolon that would otherwise end
+// the value or the option, the backslash that escapes, and the pipe that
+// delimits hex.
+var hexMustEncode = map[byte]bool{'"': true, ';': true, '\\': true, '|': true}
+
+// checkContentHex reports a content that hex-encodes a printable ASCII byte it
+// could carry literally (skill §28): a rule reads far more clearly as
+// content:"GET" than content:"|47 45 54|", and the hex hides what is matched.
+// Bytes that can only be written as hex are left alone.
+func checkContentHex(c *ruleCheckCtx) {
+	for _, r := range c.tree.Rules() {
+		for _, o := range r.Options() {
+			if o.Name() != "content" && o.Name() != "uricontent" {
+				continue
+			}
+			for _, m := range contentHexRe.FindAllStringSubmatch(logical(o), -1) {
+				done := false
+				for _, hb := range strings.Fields(m[1]) {
+					b, err := strconv.ParseUint(hb, 16, 8)
+					if err != nil {
+						continue
+					}
+					if code := byte(b); code >= 0x20 && code <= 0x7e && !hexMustEncode[code] {
+						c.report(o.Span(), "content hex-encodes the printable byte |%s|; write it literally as %q", hb, string(rune(code)))
+						done = true
+
+						break
+					}
+				}
+				if done {
+					break // one finding per content is enough
+				}
+			}
+		}
+	}
+}
 
 func checkNoFastPattern(c *ruleCheckCtx) {
 	for _, r := range c.tree.Rules() {
@@ -1096,6 +1262,50 @@ func checkSnortPUTBody(c *ruleCheckCtx) {
 				c.report(p.opt.Span(), "Snort fills http_client_body from POST bodies only; match a PUT body as raw content")
 
 				break
+			}
+		}
+	}
+}
+
+// stickyBufferSetters move the detection cursor to a buffer; the options that
+// follow search it. These three are shared by Snort and Suricata. Suricata's
+// dotted sticky buffers (http.response_body, ...) are deliberately left out so
+// the check stays engine-neutral and free of false positives on those names.
+var stickyBufferSetters = map[string]bool{"file_data": true, "pkt_data": true, "base64_data": true}
+
+// bufferConsumers read from whatever buffer is currently selected.
+var bufferConsumers = map[string]bool{
+	"content": true, "uricontent": true, "pcre": true,
+	"byte_test": true, "byte_jump": true, "byte_extract": true, "byte_math": true,
+	"isdataat": true,
+}
+
+// checkStickyBufferScope reports a file_data/pkt_data/base64_data setter with
+// no content, pcre or byte_* after it to search the buffer it selects. Written
+// at the tail of a rule the setter scopes nothing, and a content before it
+// silently matched the default buffer instead, so the rule no longer mirrors
+// its paired http.response_body; content:... Suricata rule. The pcap replay
+// misses this because the content still matches the raw payload.
+func checkStickyBufferScope(c *ruleCheckCtx) {
+	for _, r := range c.tree.Rules() {
+		opts := r.Options()
+		for i, o := range opts {
+			if !stickyBufferSetters[o.Name()] {
+				continue
+			}
+			scoped := false
+			for _, next := range opts[i+1:] {
+				if bufferConsumers[next.Name()] {
+					scoped = true
+
+					break
+				}
+				if stickyBufferSetters[next.Name()] {
+					break
+				}
+			}
+			if !scoped {
+				c.report(o.Span(), "%s sets a buffer with no content, pcre or byte_* after it to search; put the setter before the match it scopes", o.Name())
 			}
 		}
 	}

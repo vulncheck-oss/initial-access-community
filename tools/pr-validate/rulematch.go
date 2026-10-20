@@ -21,6 +21,10 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/zeroSteiner/idsrule"
+	"github.com/zeroSteiner/idsrule/cst"
+	"github.com/zeroSteiner/idsrule/value"
 )
 
 // RuleRuleMatch identifies rule-vs-capture replay findings.
@@ -51,6 +55,7 @@ var snortConf = template.Must(template.New("snort.conf").Parse(snortConfTemplate
 var snortAlertRe = regexp.MustCompile(`\[\*\*\] \[(\d+):(\d+):(\d+)\] (.*?) \[\*\*\]`)
 
 type ruleAlert struct {
+	GID int
 	SID int
 	Msg string
 }
@@ -81,11 +86,12 @@ var ruleEngines = []ruleEngine{
 
 // lintRuleMatch replays every unencrypted capture in the entry through each
 // Suricata and Snort rule file next to it, and requires every capture to raise
-// at least one alert from every rule file. Rules and captures are paired per
-// directory, so a sub-package (cve-x/variant/) is checked against its own
-// captures. Encrypted captures are ignored; a directory with rules but no
-// unencrypted capture is a warning. A rule file the engine fails to load is an
-// error.
+// at least one alert from every rule file, and every rule to alert on at least
+// one capture unless it is a variant or never alerts (see ruleNeedsCapture).
+// Rules and captures are paired per directory, so a sub-package (cve-x/variant/)
+// is checked against its own captures. Encrypted captures are ignored; a
+// directory with rules but no unencrypted capture is a warning. A rule file the
+// engine fails to load is an error.
 func lintRuleMatch(dir, entryID string) int {
 	if flagSkipRuleMatch {
 		return 0
@@ -156,6 +162,8 @@ func lintRuleMatch(dir, entryID string) int {
 				failed++
 				continue
 			}
+			fired := map[int]bool{}
+			replayed := true
 			for _, pcap := range g.pcaps {
 				if _, ok := captures[pcap]; !ok {
 					p, err := pcapServerPorts(pcap)
@@ -186,6 +194,8 @@ func lintRuleMatch(dir, entryID string) int {
 					}
 					log.Print(msg)
 					failed++
+					replayed = false
+
 					break // a rule load error repeats for every capture
 				}
 				if len(alerts) == 0 {
@@ -193,11 +203,64 @@ func lintRuleMatch(dir, entryID string) int {
 						upperID, engine.Name, relPath(dir, rule), relPath(dir, pcap), RuleRuleMatch)
 					failed++
 				}
+				for _, alert := range alerts {
+					if alert.GID == 1 {
+						fired[alert.SID] = true
+					}
+				}
+			}
+			if replayed {
+				failed += lintRulesFired(dir, upperID, engine, rule, fired)
 			}
 		}
 	}
 
 	return failed
+}
+
+// lintRulesFired reports each rule in the rule file that needs a capture
+// (ruleNeedsCapture) and whose SID is not in fired. It returns the number of
+// errors.
+func lintRulesFired(dir, upperID string, engine ruleEngine, rule string, fired map[int]bool) int {
+	src, err := os.ReadFile(rule)
+	if err != nil {
+		log.Printf("ERROR: %s - unable to read %s: %v [%s]", upperID, relPath(dir, rule), err, RuleRuleMatch)
+		return 1
+	}
+	tree, _ := idsrule.Parse(rule, src)
+	failed := 0
+	for _, r := range tree.Rules() {
+		sid, _, ok := ruleSIDValue(r)
+		if !ok || fired[int(sid)] || !ruleNeedsCapture(r) {
+			continue
+		}
+		msg, _ := ruleMsg(r)
+		log.Printf("ERROR: %s - %s:%d: %s rule sid:%d (%q) did not alert on any capture; add a capture that triggers it, or mark it a variant in its msg [%s]",
+			upperID, relPath(dir, rule), tree.Lines().Position(r.Span().Start).Line, engine.Name, sid, msg, RuleRuleMatch)
+		failed++
+	}
+
+	return failed
+}
+
+// ruleNeedsCapture reports whether some capture must trigger r: it is not a
+// variant, one written for another exploit's traffic and tagged in its msg
+// ("(Metasploit Variant)", "(HSQLDB Variant 2)"), and it can alert at all (no
+// flowbits:noalert or noalert).
+func ruleNeedsCapture(r *cst.Rule) bool {
+	if msg, _ := ruleMsg(r); strings.Contains(strings.ToLower(msg), "variant") {
+		return false
+	}
+	if r.Option("noalert") != nil {
+		return false
+	}
+	for _, o := range r.OptionsNamed("flowbits") {
+		if fb, err := value.ParseFlowbits(logical(o)); err == nil && fb.Verb == "noalert" {
+			return false
+		}
+	}
+
+	return true
 }
 
 // isUnencryptedPcap reports whether a file name is an unencrypted capture,
@@ -307,6 +370,7 @@ func runSuricata(rule, pcap string, _ captureInfo) ([]ruleAlert, error) {
 		var event struct {
 			EventType string `json:"event_type"`
 			Alert     struct {
+				GID         int    `json:"gid"`
 				SignatureID int    `json:"signature_id"`
 				Signature   string `json:"signature"`
 			} `json:"alert"`
@@ -314,7 +378,7 @@ func runSuricata(rule, pcap string, _ captureInfo) ([]ruleAlert, error) {
 		if json.Unmarshal(scanner.Bytes(), &event) != nil || event.EventType != "alert" {
 			continue
 		}
-		alerts = append(alerts, ruleAlert{SID: event.Alert.SignatureID, Msg: event.Alert.Signature})
+		alerts = append(alerts, ruleAlert{GID: event.Alert.GID, SID: event.Alert.SignatureID, Msg: event.Alert.Signature})
 	}
 
 	return alerts, scanner.Err()
@@ -378,8 +442,9 @@ func runSnort(rule, pcap string, capture captureInfo) ([]ruleAlert, error) {
 
 	alerts := []ruleAlert{}
 	for _, m := range snortAlertRe.FindAllStringSubmatch(string(out), -1) {
+		gid, _ := strconv.Atoi(m[1])
 		sid, _ := strconv.Atoi(m[2])
-		alerts = append(alerts, ruleAlert{SID: sid, Msg: m[4]})
+		alerts = append(alerts, ruleAlert{GID: gid, SID: sid, Msg: m[4]})
 	}
 
 	return alerts, nil

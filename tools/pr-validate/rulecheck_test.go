@@ -128,6 +128,16 @@ func Test_ruleChecks(t *testing.T) {
 			vcRule(snortHeader, `content:"a"; http_uri;`) + strings.Replace(strings.Replace(vcRule(snortHeader, `content:"a"; http_uri;`), classtype, "classtype:attempted-admin;", 1), "sid:1;", "sid:2;", 1),
 			nil, []string{"vc-classtype-admin"},
 		},
+		{
+			"a rule must track an established flow", "x.snort.rule",
+			mkRule(snortHeader, attemptMsg, `content:"a"; http_uri;`, reference, classtype, sidRev, deployBoth),
+			nil, []string{"vc-flow-established"},
+		},
+		{
+			"a flow without established is reported", "x.snort.rule",
+			mkRule(snortHeader, attemptMsg, "flow:to_server;", `content:"a"; http_uri;`, reference, classtype, sidRev, deployBoth),
+			nil, []string{"vc-flow-established"},
+		},
 		// flowbits and success
 		{
 			"flowbits must be named vc-cve-", "x.snort.rule",
@@ -155,6 +165,18 @@ func Test_ruleChecks(t *testing.T) {
 			mkRule(snortHeader, successMsg, "flow:from_server,established;", `content:"200"; http_stat_code;`, reference, classtype, sidRev,
 				"metadata: impact successful-exploitation, deployment Datacenter, deployment SSLDecrypt;"),
 			nil, []string{"vc-success-impact"},
+		},
+		{
+			"a success rule must not keep an attempted-* classtype", "x.snort.rule",
+			mkRule(snortHeader, successMsg, "flow:from_server,established;", `content:"200"; http_stat_code;`, reference, "classtype:attempted-user;", sidRev,
+				"metadata: deployment Datacenter, deployment SSLDecrypt, impact successful-exploitation;"),
+			nil, []string{"vc-success-classtype"},
+		},
+		{
+			"a success rule with a successful-* classtype is fine", "x.snort.rule",
+			mkRule(snortHeader, successMsg, "flow:from_server,established;", `content:"200"; http_stat_code;`, reference, "classtype:successful-user;", sidRev,
+				"metadata: deployment Datacenter, deployment SSLDecrypt, impact successful-exploitation;"),
+			nil, nil,
 		},
 		// layout
 		{
@@ -192,6 +214,26 @@ func Test_ruleChecks(t *testing.T) {
 			"no fast_pattern", "x.snort.rule",
 			vcRule(snortHeader, `content:"a"; fast_pattern; http_uri;`),
 			nil, []string{"vc-no-fast-pattern"},
+		},
+		{
+			"content must not hex-encode printable ASCII", "x.snort.rule",
+			vcRule(snortHeader, `content:"a|2f 62|c"; http_uri;`),
+			nil, []string{"vc-content-hex"},
+		},
+		{
+			"hex for bytes that need it is fine", "x.snort.rule",
+			vcRule(snortHeader, `content:"a|22 3b 5c 7c|b"; http_uri;`),
+			nil, nil,
+		},
+		{
+			"a sticky buffer setter needs a match after it", "x.snort.rule",
+			vcRule(snortHeader, `content:"a"; http_uri;`, "file_data;"),
+			nil, []string{"vc-sticky-buffer-scope"},
+		},
+		{
+			"a sticky buffer setter with a following content is fine", "x.snort.rule",
+			vcRule(snortHeader, "file_data;", `content:"a";`),
+			nil, nil,
 		},
 		{
 			"suricata pcre must not pick its buffer with a flag", "x.suricata.rule",
@@ -275,7 +317,7 @@ func Test_ruleChecks(t *testing.T) {
 				mkRule("alert udp any 12346 -> any any", successMsg, `content:"|01|"; depth:1;`, reference, classtype, "flowbits:isset,vc-cve-2026-0001;", "sid:2; rev:1;",
 					"metadata: deployment Datacenter, deployment SSLDecrypt, impact successful-exploitation;") +
 				vcRule(suricataHeader, `http.uri; content:"/a"; startswith;`, "flowbits:set,vc-cve-2026-0001;", "flowbits:noalert;"),
-			nil, []string{"vc-sid-placeholder-sequence"},
+			nil, []string{"vc-flow-established", "vc-flow-established", "vc-sid-placeholder-sequence"},
 		},
 		{
 			"two matches on the line after their sticky buffer", "x.suricata.rule",
@@ -300,7 +342,7 @@ func Test_ruleChecks(t *testing.T) {
 		{
 			"the snort path depth equals the path length", "x.snort.rule",
 			vcRule(snortHeader, `content:"/start_apply.htm"; depth:16; http_uri;`) +
-				strings.Replace(vcRule(snortHeader, `content:"/a\;b|2f|"; depth:5; http_uri;`), "sid:1;", "sid:2;", 1),
+				strings.Replace(vcRule(snortHeader, `content:"/a\;b|3b|"; depth:5; http_uri;`), "sid:1;", "sid:2;", 1),
 			nil, nil,
 		},
 		{
@@ -311,7 +353,7 @@ func Test_ruleChecks(t *testing.T) {
 		},
 		{
 			"escapes and hex count once", "x.snort.rule",
-			vcRule(snortHeader, `content:"/a\;b|2f|"; depth:7; http_uri;`),
+			vcRule(snortHeader, `content:"/a\;b|3b|"; depth:7; http_uri;`),
 			nil, []string{"vc-uri-path-depth"},
 		},
 		{
