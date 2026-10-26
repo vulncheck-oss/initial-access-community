@@ -1,6 +1,6 @@
 # pr-validate
 
-The pull request validator for feed entries. It checks each entry's README frontmatter against its files, the target `docker-compose.yml`, the pcaps, the `go.mod` module path and the IDS rule files. This document covers the rule files.
+The pull request validator for feed entries. It checks each entry's README frontmatter against its files, the target `docker-compose.yml`, the pcaps, the `go.mod` module path, the IDS rule files and, for reverse-shell exploits, the evidence that a shell was caught. This document covers the rule files and the shell evidence.
 
 `.github/workflows/pr-gate.yml` runs it on every entry a PR touches, inside the ia-feed-builder image, which has Suricata and Snort:
 
@@ -25,7 +25,7 @@ Findings are logged as `ERROR: <ENTRY> - <message>` or `WARN: <ENTRY> - <message
 | `-entry-id` | all entries | an entry to validate; repeatable |
 | `-offline` | false | skip the online Docker image platform check |
 | `-skip-rule-match` | false | skip replaying the pcaps through Suricata and Snort |
-| `-base-ref` | none | git ref to compare rule SIDs with (`vc-sid-preserved`) |
+| `-base-ref` | none | git ref to compare rule SIDs with (`vc-sid-preserved`) and exploit source with (`vc-pcap-older-than-source`) |
 | `-fix-rules` | false | rewrite the entries' rule files with every autofix applied first (local use; pass `-entry-id`, or every entry's rules are rewritten) |
 | `-snort-etc`, `-snort-lib`, `-suricata-config` | CI image paths | engine paths for the replay |
 
@@ -107,10 +107,22 @@ Policy:
 | `vc-sid-preserved` | error | with `-base-ref`: a rule that CI assigned a SID keeps it, and real SIDs are never invented (§6) |
 | `vc-rule-parity` | error | the `.suricata.rule` and `.snort.rule` twins agree on rule count and each rule's msg, classtype and flowbits actions (§4) |
 
+## Shell evidence
+
+`rule-pcap-match` passes whenever the Attempt rule matches the request, even when the exploit behind it failed, so the shell-evidence checks in `shell.go` look at what a successful reverse shell leaves behind. They run for an entry whose top-level `cve-*.go` catches a reverse shell: its `[]c2.Impl` list (the `supportedC2` slice, or the list passed straight to `config.New*`) holds `SimpleShellServer` or `SSLShellServer`, or the source polls `c2.HadSessions`. A webshell entry, whose list is empty, is skipped whatever else it mentions. `vc-pcap-older-than-source` is the exception: it runs for every entry with exploit source.
+
+| Check | Level | Rule |
+|---|---|---|
+| `vc-pcap-older-than-source` | error | with `-base-ref`: when a top-level `cve-*.go` changed against the base ref, some `*-unencrypted.pcap` in the entry changed too (untracked files count); otherwise the evidence capture predates the exploit source. Every entry with exploit source, shell or not |
+| `vc-readme-listener-consistent` | error | in a README code block, a run command with `-lhost X -lport N` is followed (in that block, or the next ones up to the next heading) by `Starting listener on X:N` / `Starting TLS listener on X:N`, not some other address: a mismatch means the output was not captured from that command |
+| `vc-dockerfile-symlink-copy` | error | when a top-level `*.go` (typically `reverse_shell.go`) is a symlink pointing outside the entry, the Dockerfile does not `COPY *.go` (docker cannot follow the link out of the build context, so the image build breaks); use `COPY cve-*.go ./` |
+
+Findings carry no rule position: they read `ERROR: <ENTRY> - <path>[:line]: <message> [<check-id>]`.
+
 ## Tests
 
 ```sh
 go vet ./... && go test ./...
 ```
 
-`.github/workflows/pr-validate-tests.yml` runs them on PRs that change this tool. The rule-lint fixtures under `testdata/feed` are described in [its README](testdata/feed/README.md).
+`.github/workflows/pr-validate-tests.yml` runs them on PRs that change this tool. The rule-lint and shell-evidence fixtures under `testdata/feed` are described in [its README](testdata/feed/README.md).

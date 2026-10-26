@@ -242,6 +242,7 @@ func main() {
 		total_failures += lintRules(flagDirectory, dirEntry.Name())
 		total_failures += lintPcap(flagDirectory, dirEntry.Name())
 		total_failures += lintGoMod(flagDirectory, dirEntry.Name())
+		total_failures += lintShellEvidence(flagDirectory, dirEntry.Name())
 		total_failures += lintRuleMatch(flagDirectory, dirEntry.Name())
 	}
 	for id, scanned := range requested {
