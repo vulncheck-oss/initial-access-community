@@ -46,11 +46,13 @@ from pathlib import Path
 SID_PATTERN = re.compile(r'\bsid\s*:\s*(\d+)\s*;')
 MSG_PATTERN = re.compile(r'\bmsg\s*:\s*"([^"]+)"')
 SID_RANGE_START = 12_900_000  # SIDs below this are treated as unassigned
-# Upper bound of VulnCheck's allocated SID block. Mirrors sidMax in
-# vulncheck/ia-feed sid_test.go, which fails the feed build for any SID outside
-# [12700001, 12800001]. Keep the two in sync: this is the copy that gets to
-# refuse an assignment, the other one only gets to complain after the merge.
-SID_RANGE_END = 12_800_001
+# Upper bound of this public mirror's allocated SID block. The public feed is
+# assigned the [12900001, 13000001] block, deliberately disjoint from the paid
+# feed's [12700001, 12800001] so a user running both feeds never gets colliding
+# SIDs. Mirrors sidMax in tools/pr-validate/rules.go; keep the two in sync --
+# this is the copy that gets to refuse an assignment, the other one only gets
+# to complain after the merge.
+SID_RANGE_END = 13_000_001
 
 RULE_SUFFIXES = ('.suricata.rule', '.snort.rule')
 

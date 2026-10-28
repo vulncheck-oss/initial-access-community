@@ -17,14 +17,16 @@ import (
 	"github.com/zeroSteiner/idsrule/source"
 )
 
-// The VulnCheck SID block. Rules below sidPlaceholderBelow carry a
+// This public mirror's SID block. Rules below sidPlaceholderBelow carry a
 // placeholder (sid:1, sid:2, ...) that CI replaces with a real SID after
-// merge. Mirrors SID_RANGE_START/SID_RANGE_END in
-// .github/scripts/reassign_sids.py and sidMin/sidMax in ia-feed's sid_test.go.
+// merge. The public feed uses [12900001, 13000001], deliberately disjoint from
+// the paid feed's [12700001, 12800001] so a user running both never gets
+// colliding SIDs. Mirrors SID_RANGE_START/SID_RANGE_END in
+// .github/scripts/reassign_sids.py.
 const (
-	sidPlaceholderBelow = 12_700_000
-	sidMin              = 12_700_001
-	sidMax              = 12_800_001
+	sidPlaceholderBelow = 12_900_000
+	sidMin              = 12_900_001
+	sidMax              = 13_000_001
 )
 
 // RuleRuleLint identifies rule files pr-validate could not lint.
