@@ -26,7 +26,7 @@ jobs:
     # Same image ia-feed's merge job uses, so Suricata/Snort here and there
     # agree. Pre-baked; nothing to apt install.
     container:
-      image: ghcr.io/vulncheck/ia-feed-builder:latest
+      image: ghcr.io/vulncheck-oss/ia-feed-builder:latest
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
