@@ -1,6 +1,6 @@
 module github.com/vulncheck-oss/initial-access-community/tools/pr-validate
 
-go 1.25.0
+go 1.26.10
 
 require (
 	github.com/adrg/frontmatter v0.2.0
