@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"log"
@@ -17,17 +18,44 @@ import (
 	"github.com/zeroSteiner/idsrule/source"
 )
 
-// This public mirror's SID block. Rules below sidPlaceholderBelow carry a
-// placeholder (sid:1, sid:2, ...) that CI replaces with a real SID after
-// merge. The public feed uses [12900001, 13000001], deliberately disjoint from
-// the paid feed's [12700001, 12800001] so a user running both never gets
-// colliding SIDs. Mirrors SID_RANGE_START/SID_RANGE_END in
-// .github/scripts/reassign_sids.py.
-const (
-	sidPlaceholderBelow = 12_900_000
-	sidMin              = 12_900_001
-	sidMax              = 13_000_001
+// This repo's SID block, loaded from the policy file (.sid.json) by
+// loadSIDPolicy. Rules below sidMin carry a placeholder (sid:1, sid:2, ...)
+// that CI replaces with a real SID after merge; [sidMin, sidMax] is the
+// allocated block. The bounds live in the per-repo policy file (not in this
+// shared source) so the public mirror and the paid feed each carry their own
+// disjoint block and a user running both never gets colliding SIDs. The same
+// file drives .github/scripts/reassign_sids.py.
+var (
+	sidMin uint64
+	sidMax uint64
 )
+
+// loadSIDPolicy reads the SID block bounds from the policy file (.sid.json) and
+// sets sidMin/sidMax. The file also carries the reassign-sids cursor ("counter"),
+// which pr-validate does not use. It is per-repo and excluded from the copybara
+// export, so each mirror holds its own block.
+func loadSIDPolicy(path string) error {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("read SID policy %s: %w", path, err)
+	}
+	var policy struct {
+		Min *uint64 `json:"min"`
+		Max *uint64 `json:"max"`
+	}
+	if err := json.Unmarshal(data, &policy); err != nil {
+		return fmt.Errorf("parse SID policy %s: %w", path, err)
+	}
+	if policy.Min == nil || policy.Max == nil {
+		return fmt.Errorf("SID policy %s is missing \"min\" or \"max\"", path)
+	}
+	if *policy.Min > *policy.Max {
+		return fmt.Errorf("SID policy %s has min (%d) above max (%d)", path, *policy.Min, *policy.Max)
+	}
+	sidMin, sidMax = *policy.Min, *policy.Max
+
+	return nil
+}
 
 // RuleRuleLint identifies rule files pr-validate could not lint.
 const RuleRuleLint = "rule-lint"
@@ -67,7 +95,8 @@ func ruleLintOptions(d idsrule.Dialect) idsrule.Options {
 	opts.Dialect = d
 	opts.Policy.SIDMin = sidMin
 	opts.Policy.SIDMax = sidMax
-	opts.Policy.PlaceholderBelow = sidPlaceholderBelow
+	// A SID below the block start is a placeholder awaiting assignment.
+	opts.Policy.PlaceholderBelow = sidMin
 	opts.Policy.MsgPrefix = "VULNCHECK "
 	opts.Policy.Style.ContinuationIndent = continuationIndent
 	opts.Checks.Style = true
