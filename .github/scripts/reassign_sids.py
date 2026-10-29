@@ -5,9 +5,9 @@ reassign_sids.py
 Assigns SIDs to new rules in <name>.suricata.rule / <name>.snort.rule files.
 
 Rules are matched across file pairs by their msg: field (case-insensitive,
-whitespace-normalised). Any rule whose SID is below SID_RANGE_START (12900000)
-is treated as unassigned and will receive a new SID. Rules with a valid
-in-range SID are never modified.
+whitespace-normalised). Any rule whose SID is below `min` (the start of the
+allocated block) is treated as unassigned and will receive a new SID. Rules
+with a valid in-range SID are never modified.
 
 Pairing behaviour:
   - Both files changed: paired rules share one SID, unpaired get their own.
@@ -18,14 +18,18 @@ Pairing behaviour:
 Rules span multiple lines using backslash continuation and are parsed as
 logical units before field extraction.
 
-Counter file (.sid_counter):
-  A single integer — the last SID assigned by this script.
-  Must be >= SID_RANGE_START. Seed with your current highest SID, e.g:
-    echo "12900000" > .sid_counter
+Policy file (.sid.json):
+  A JSON object holding this repo's SID block and cursor:
+    {"counter": <last SID assigned>, "min": <block start>, "max": <block end>}
+  `min`/`max` are the inclusive bounds of the block allocated to this repo and
+  are never rewritten by this script; `counter` is the last SID handed out and
+  must sit in [min - 1, max). Seed a fresh file with the block bounds and set
+  `counter` to `min - 1` (or your current highest SID). This file is per-repo
+  and is excluded from the copybara export, so each mirror keeps its own block.
 
 Usage:
-    python reassign_sids.py --sid-file .sid_counter --changed-files f1 [f2 ...]
-    python reassign_sids.py --sid-file .sid_counter --changed-files f1 --dry-run
+    python reassign_sids.py --sid-file .sid.json --changed-files f1 [f2 ...]
+    python reassign_sids.py --sid-file .sid.json --changed-files f1 --dry-run
 
     # Print every rule file in the tree that still holds a placeholder SID.
     # This is what the push-time workflow feeds back into --changed-files, and
@@ -34,67 +38,93 @@ Usage:
 
     # Validate without writing anything: lint the PR's changed rule files, then
     # dry-run the assignment the push job will perform. Used by the PR gate.
-    python reassign_sids.py --check --sid-file .sid_counter --changed-files f1 [f2 ...]
+    python reassign_sids.py --check --sid-file .sid.json --changed-files f1 [f2 ...]
 """
 
 from __future__ import annotations
 import argparse
+import json
 import re
 import sys
 from pathlib import Path
 
 SID_PATTERN = re.compile(r'\bsid\s*:\s*(\d+)\s*;')
 MSG_PATTERN = re.compile(r'\bmsg\s*:\s*"([^"]+)"')
-SID_RANGE_START = 12_900_000  # SIDs below this are treated as unassigned
-# Upper bound of this public mirror's allocated SID block. The public feed is
-# assigned the [12900001, 13000001] block, deliberately disjoint from the paid
-# feed's [12700001, 12800001] so a user running both feeds never gets colliding
-# SIDs. Mirrors sidMax in tools/pr-validate/rules.go; keep the two in sync --
-# this is the copy that gets to refuse an assignment, the other one only gets
-# to complain after the merge.
-SID_RANGE_END = 13_000_001
+# This repo's allocated SID block, loaded from the policy file (.sid.json) at
+# startup -- see load_policy(). SID_MIN/SID_MAX are the inclusive bounds; a SID
+# below SID_MIN is a placeholder awaiting assignment. The bounds live in the
+# per-repo policy file (not in this shared source) so the public mirror and the
+# paid feed each carry their own disjoint block and a user running both never
+# gets colliding SIDs. tools/pr-validate/rules.go loads the same file; this is
+# the copy that gets to refuse an assignment, the other only complains after
+# the merge.
+SID_MIN = 0
+SID_MAX = 0
 
 RULE_SUFFIXES = ('.suricata.rule', '.snort.rule')
 
 
 # ---------------------------------------------------------------------------
-# Counter helpers
+# Policy file (counter + block bounds)
 # ---------------------------------------------------------------------------
 
-def load_counter(sid_file: Path) -> int:
+def load_policy(sid_file: Path) -> int:
+    """Load the SID block + cursor from sid_file, set SID_MIN/SID_MAX, return counter.
+
+    The policy file is a JSON object {"counter", "min", "max"}. It is per-repo
+    and excluded from the copybara export, so each mirror keeps its own block.
+    """
+    global SID_MIN, SID_MAX
     if not sid_file.exists():
         print(
-            f"Error: counter file '{sid_file}' not found.\n"
-            f"Create it with your current highest SID before running, e.g.:\n"
-            f"  echo '12900000' > {sid_file}",
+            f"Error: policy file '{sid_file}' not found.\n"
+            f"Create it with this repo's SID block and cursor, e.g.:\n"
+            f'  echo \'{{"counter": 12900000, "min": 12900001, "max": 13000001}}\' > {sid_file}',
             file=sys.stderr,
         )
         sys.exit(1)
-    text = sid_file.read_text().strip()
-    if not text.isdigit():
-        print(f"Error: {sid_file} should contain a single integer.", file=sys.stderr)
+    try:
+        policy = json.loads(sid_file.read_text())
+    except json.JSONDecodeError as exc:
+        print(f"Error: {sid_file} is not valid JSON: {exc}", file=sys.stderr)
         sys.exit(1)
-    counter = int(text)
-    if counter < SID_RANGE_START:
+    try:
+        counter = int(policy['counter'])
+        SID_MIN = int(policy['min'])
+        SID_MAX = int(policy['max'])
+    except (KeyError, TypeError, ValueError):
+        print(
+            f'Error: {sid_file} must be a JSON object with integer "counter", '
+            f'"min" and "max" fields.',
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    if SID_MIN > SID_MAX:
+        print(f"Error: {sid_file} has min ({SID_MIN}) above max ({SID_MAX}).", file=sys.stderr)
+        sys.exit(1)
+    if counter < SID_MIN - 1:
         print(
             f"Error: counter value {counter} in '{sid_file}' is below the managed "
-            f"range ({SID_RANGE_START}+). Update the file with your current highest SID.",
+            f"range (min - 1 = {SID_MIN - 1}). Update it with your current highest SID.",
             file=sys.stderr,
         )
         sys.exit(1)
-    if counter >= SID_RANGE_END:
+    if counter >= SID_MAX:
         print(
             f"Error: counter value {counter} in '{sid_file}' has reached the end of "
-            f"the allocated range ({SID_RANGE_END}). No further SIDs can be assigned "
-            f"until VulnCheck is allocated a new block.",
+            f"the allocated range (max = {SID_MAX}). No further SIDs can be assigned "
+            f"until this repo is allocated a new block.",
             file=sys.stderr,
         )
         sys.exit(1)
     return counter
 
 
-def save_counter(sid_file: Path, value: int) -> None:
-    sid_file.write_text(str(value) + '\n')
+def save_policy(sid_file: Path, value: int) -> None:
+    """Write the counter back, preserving the block bounds and any other fields."""
+    policy = json.loads(sid_file.read_text())
+    policy['counter'] = value
+    sid_file.write_text(json.dumps(policy, indent=2) + '\n')
 
 
 # ---------------------------------------------------------------------------
@@ -112,7 +142,7 @@ def is_rule(entry: dict) -> bool:
 
 def is_unassigned(sid: str | None) -> bool:
     """True for a placeholder SID -- sid:1, sid:2, ... -- that needs assigning."""
-    return sid is not None and int(sid) < SID_RANGE_START
+    return sid is not None and int(sid) < SID_MIN
 
 
 def parse_rules(path: Path) -> list[dict]:
@@ -277,7 +307,7 @@ def process_dir(
     all_new_msgs = sorted(set(sur_new) | set(snort_new))
 
     if not all_new_msgs:
-        print(f"  {rule_dir}: no unassigned SIDs (< {SID_RANGE_START}) found, skipping")
+        print(f"  {rule_dir}: no unassigned SIDs (< {SID_MIN}) found, skipping")
         return counter
 
     # Build existing SID maps from both files, excluding rules that are
@@ -292,7 +322,7 @@ def process_dir(
             and e['msg_norm']
             and e['sid']
             and e['msg_norm'] not in new_msgs
-            and int(e['sid']) >= SID_RANGE_START
+            and int(e['sid']) >= SID_MIN
         }
 
     sur_existing   = existing_sids(sur_entries,   sur_new)
@@ -307,15 +337,15 @@ def process_dir(
 
         partner_sid = sur_existing.get(msg_norm) or snort_existing.get(msg_norm)
 
-        if partner_sid and partner_sid >= SID_RANGE_START:
+        if partner_sid and partner_sid >= SID_MIN:
             new_sid = partner_sid
             tag = "paired (reusing partner SID)"
         else:
             counter += 1
-            if counter > SID_RANGE_END:
+            if counter > SID_MAX:
                 print(
                     f"Error: assigning a SID for \"{msg_norm}\" would produce {counter}, "
-                    f"past the end of the allocated range ({SID_RANGE_END}). ia-feed's "
+                    f"past the end of the allocated range ({SID_MAX}). ia-feed's "
                     f"sid_test.go rejects it. A new SID block is needed.",
                     file=sys.stderr,
                 )
@@ -383,10 +413,10 @@ def lint_changed_files(paths: list[Path]) -> list[str]:
                         f"one cannot be assigned a real SID."
                     )
                 continue
-            if sid > SID_RANGE_END:
+            if sid > SID_MAX:
                 errors.append(
                     f"  {path}:{ln}: sid:{sid} is past the end of the allocated "
-                    f"range [{SID_RANGE_START + 1}, {SID_RANGE_END}]. ia-feed's "
+                    f"range [{SID_MIN}, {SID_MAX}]. ia-feed's "
                     f"sid_test.go fails on it."
                 )
     return errors
@@ -456,7 +486,7 @@ def run_check(changed: list[Path], sid_file: Path) -> None:
         key = 'suricata' if f.name.endswith('.suricata.rule') else 'snort'
         dirs.setdefault(f.parent, {})[key] = f
 
-    counter = load_counter(sid_file)
+    counter = load_policy(sid_file)
     for rule_dir in sorted(dirs):
         print(f"\nProcessing: {rule_dir}  (changed: {', '.join(sorted(dirs[rule_dir]))})")
         counter = process_dir(rule_dir, dirs[rule_dir], counter, dry_run=True)
@@ -470,8 +500,8 @@ def run_check(changed: list[Path], sid_file: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(
         description='Assign SIDs to new (sid:0) Suricata/Snort rules.')
-    parser.add_argument('--sid-file', type=Path, default=Path('.sid_counter'),
-                        help='Persistent SID counter file (default: .sid_counter)')
+    parser.add_argument('--sid-file', type=Path, default=Path('.sid.json'),
+                        help='SID policy file: JSON with counter/min/max (default: .sid.json)')
     parser.add_argument('--changed-files', nargs='+', type=Path, default=[],
                         help='The specific rule files changed in this push')
     parser.add_argument('--dry-run', action='store_true',
@@ -489,6 +519,11 @@ def main() -> None:
     # block of buffered progress output arriving after the error it led up to
     # makes the log hard to read.
     sys.stdout.reconfigure(line_buffering=True)
+
+    # Load the block bounds (and cursor) before anything that classifies SIDs:
+    # is_unassigned(), discover_placeholder_files() and the --check lint all
+    # need SID_MIN/SID_MAX, which load_policy() sets.
+    counter = load_policy(args.sid_file)
 
     if args.list_placeholder_files:
         for f in discover_placeholder_files():
@@ -521,8 +556,6 @@ def main() -> None:
         print("No recognised rule files in --changed-files.")
         sys.exit(0)
 
-    counter = load_counter(args.sid_file)
-
     for rule_dir in sorted(dirs):
         print(f"\nProcessing: {rule_dir}  (changed: {', '.join(sorted(dirs[rule_dir]))})")
         counter = process_dir(rule_dir, dirs[rule_dir], counter, dry_run=args.dry_run)
@@ -530,7 +563,7 @@ def main() -> None:
     if args.dry_run:
         print("\nDRY-RUN — counter not saved, no files written")
     else:
-        save_counter(args.sid_file, counter)
+        save_policy(args.sid_file, counter)
         print(f"\nCounter saved — next run starts at SID {counter + 1}")
 
 

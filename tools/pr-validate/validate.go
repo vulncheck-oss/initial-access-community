@@ -85,6 +85,7 @@ var (
 	flagSuricataConfig string
 	flagBaseRef        string
 	flagFixRules       bool
+	flagSIDPolicy      string
 )
 
 type FileMatch struct {
@@ -170,6 +171,7 @@ func main() {
 	flag.StringVar(&flagSuricataConfig, "suricata-config", "/usr/local/etc/suricata/suricata.yaml", "suricata.yaml used for rule replay")
 	flag.StringVar(&flagBaseRef, "base-ref", "", "git ref the PR is based on; rules that already carry a real SID there must keep it (empty skips the check)")
 	flag.BoolVar(&flagFixRules, "fix-rules", false, "rewrite the entries' rule files with every available autofix applied before linting them (local use; never in CI)")
+	flag.StringVar(&flagSIDPolicy, "sid-policy", "", "path to the SID policy JSON (.sid.json); empty resolves to <dir>/../.sid.json")
 
 	skiplist := map[string]string{
 		"CVE-2021-44228": "Multitarget CVE does not map cleanly to predictable paths",
@@ -188,6 +190,16 @@ func main() {
 		"CVE-2026-83549": "Chain",
 	}
 	flag.Parse()
+
+	// The SID block bounds live in the per-repo policy file, next to the feed's
+	// parent (the repo root). Load them before any rule is linted.
+	sidPolicyPath := flagSIDPolicy
+	if sidPolicyPath == "" {
+		sidPolicyPath = filepath.Join(filepath.Dir(flagDirectory), ".sid.json")
+	}
+	if err := loadSIDPolicy(sidPolicyPath); err != nil {
+		log.Fatalf("ERROR: %v", err)
+	}
 
 	// Entry IDs map to directory names in the feed (lowercase, almost always a
 	// CVE but e.g. vc-2025-1 is an exception). When none are given, scan all.

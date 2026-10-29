@@ -800,7 +800,7 @@ func checkPlaceholderSequence(c *ruleCheckCtx) {
 	next := uint64(1)
 	for _, r := range c.tree.Rules() {
 		sid, o, ok := ruleSIDValue(r)
-		if !ok || sid >= sidPlaceholderBelow {
+		if !ok || sid >= sidMin {
 			continue
 		}
 		switch {

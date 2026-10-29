@@ -36,7 +36,7 @@ type sidRule struct {
 }
 
 // isRealSID reports whether sid was assigned by CI.
-func isRealSID(sid uint64) bool { return sid >= sidPlaceholderBelow }
+func isRealSID(sid uint64) bool { return sid >= sidMin }
 
 // normaliseMsg matches normalise_msg in reassign_sids.py.
 func normaliseMsg(msg string) string {

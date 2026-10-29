@@ -15,7 +15,7 @@ on:
 permissions:
   contents: write
 
-# Serialize SID-bot runs so they don't race on .sid_counter. Queues
+# Serialize SID-bot runs so they don't race on .sid.json. Queues
 # additional runs rather than cancelling them so no SID assignment is
 # dropped.
 concurrency:
@@ -58,8 +58,8 @@ jobs:
           # legitimate duplicate-msg (HTTP/HTTPS rule variants, for
           # example).
           #
-          # SID_RANGE_START = 12_900_000 in reassign_sids.py. Any rule with
-          # a sid value below that is in the placeholder range and needs
+          # The block start ("min") lives in .sid.json. Any rule with a sid
+          # value below that is in the placeholder range and needs
           # assignment. Match sid values of 1–7 digits (every value below
           # 10M, well under the range start) — that's every realistic
           # placeholder we'd see in a freshly merged PR. The script itself
@@ -77,7 +77,7 @@ jobs:
           echo "files with placeholder SIDs:"
           printf '  %s\n' "${FILES[@]}"
           python .github/scripts/reassign_sids.py \
-            --sid-file .sid_counter \
+            --sid-file .sid.json \
             --changed-files "${FILES[@]}"
 
       - name: Commit and push
