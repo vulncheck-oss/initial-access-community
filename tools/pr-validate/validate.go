@@ -191,11 +191,14 @@ func main() {
 	}
 	flag.Parse()
 
-	// The SID block bounds live in the per-repo policy file, next to the feed's
-	// parent (the repo root). Load them before any rule is linted.
+	// The SID block bounds live in the per-repo policy file at the repo root, the
+	// parent of the feed directory. Resolve it with Join(dir, "..") rather than
+	// filepath.Dir(dir): callers pass -dir with a trailing slash (e.g.
+	// "../../feed/"), and filepath.Dir would then leave the path pointing at the
+	// feed directory itself instead of its parent. Load before any rule is linted.
 	sidPolicyPath := flagSIDPolicy
 	if sidPolicyPath == "" {
-		sidPolicyPath = filepath.Join(filepath.Dir(flagDirectory), ".sid.json")
+		sidPolicyPath = filepath.Join(flagDirectory, "..", ".sid.json")
 	}
 	if err := loadSIDPolicy(sidPolicyPath); err != nil {
 		log.Fatalf("ERROR: %v", err)
