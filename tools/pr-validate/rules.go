@@ -49,6 +49,9 @@ func loadSIDPolicy(path string) error {
 	if policy.Min == nil || policy.Max == nil {
 		return fmt.Errorf("SID policy %s is missing \"min\" or \"max\"", path)
 	}
+	if *policy.Min == 0 {
+		return fmt.Errorf("SID policy %s has a min of 0; the block start must be positive", path)
+	}
 	if *policy.Min > *policy.Max {
 		return fmt.Errorf("SID policy %s has min (%d) above max (%d)", path, *policy.Min, *policy.Max)
 	}
