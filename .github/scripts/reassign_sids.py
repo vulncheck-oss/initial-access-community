@@ -99,6 +99,13 @@ def load_policy(sid_file: Path) -> int:
             file=sys.stderr,
         )
         sys.exit(1)
+    if SID_RANGE_START < 1:
+        print(
+            f"Error: {sid_file} has a min of {SID_RANGE_START}; the block start "
+            f"must be positive.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
     if SID_RANGE_START > SID_RANGE_END:
         print(f"Error: {sid_file} has min ({SID_RANGE_START}) above max ({SID_RANGE_END}).", file=sys.stderr)
         sys.exit(1)
