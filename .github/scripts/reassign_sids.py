@@ -51,15 +51,15 @@ from pathlib import Path
 SID_PATTERN = re.compile(r'\bsid\s*:\s*(\d+)\s*;')
 MSG_PATTERN = re.compile(r'\bmsg\s*:\s*"([^"]+)"')
 # This repo's allocated SID block, loaded from the policy file (.sid.json) at
-# startup -- see load_policy(). SID_MIN/SID_MAX are the inclusive bounds; a SID
-# below SID_MIN is a placeholder awaiting assignment. The bounds live in the
-# per-repo policy file (not in this shared source) so the public mirror and the
-# paid feed each carry their own disjoint block and a user running both never
-# gets colliding SIDs. tools/pr-validate/rules.go loads the same file; this is
-# the copy that gets to refuse an assignment, the other only complains after
-# the merge.
-SID_MIN = 0
-SID_MAX = 0
+# startup -- see load_policy(). SID_RANGE_START/SID_RANGE_END are the inclusive
+# bounds; a SID below SID_RANGE_START is a placeholder awaiting assignment. The
+# bounds live in the per-repo policy file (not in this shared source) so the
+# public mirror and the paid feed each carry their own disjoint block and a user
+# running both never gets colliding SIDs. tools/pr-validate/rules.go loads the
+# same file; this is the copy that gets to refuse an assignment, the other only
+# complains after the merge.
+SID_RANGE_START = 0
+SID_RANGE_END = 0
 
 RULE_SUFFIXES = ('.suricata.rule', '.snort.rule')
 
@@ -69,12 +69,12 @@ RULE_SUFFIXES = ('.suricata.rule', '.snort.rule')
 # ---------------------------------------------------------------------------
 
 def load_policy(sid_file: Path) -> int:
-    """Load the SID block + cursor from sid_file, set SID_MIN/SID_MAX, return counter.
+    """Load the SID block + cursor from sid_file, set SID_RANGE_START/SID_RANGE_END, return counter.
 
     The policy file is a JSON object {"counter", "min", "max"}. It is per-repo
     and excluded from the copybara export, so each mirror keeps its own block.
     """
-    global SID_MIN, SID_MAX
+    global SID_RANGE_START, SID_RANGE_END
     if not sid_file.exists():
         print(
             f"Error: policy file '{sid_file}' not found.\n"
@@ -90,8 +90,8 @@ def load_policy(sid_file: Path) -> int:
         sys.exit(1)
     try:
         counter = int(policy['counter'])
-        SID_MIN = int(policy['min'])
-        SID_MAX = int(policy['max'])
+        SID_RANGE_START = int(policy['min'])
+        SID_RANGE_END = int(policy['max'])
     except (KeyError, TypeError, ValueError):
         print(
             f'Error: {sid_file} must be a JSON object with integer "counter", '
@@ -99,20 +99,20 @@ def load_policy(sid_file: Path) -> int:
             file=sys.stderr,
         )
         sys.exit(1)
-    if SID_MIN > SID_MAX:
-        print(f"Error: {sid_file} has min ({SID_MIN}) above max ({SID_MAX}).", file=sys.stderr)
+    if SID_RANGE_START > SID_RANGE_END:
+        print(f"Error: {sid_file} has min ({SID_RANGE_START}) above max ({SID_RANGE_END}).", file=sys.stderr)
         sys.exit(1)
-    if counter < SID_MIN - 1:
+    if counter < SID_RANGE_START - 1:
         print(
             f"Error: counter value {counter} in '{sid_file}' is below the managed "
-            f"range (min - 1 = {SID_MIN - 1}). Update it with your current highest SID.",
+            f"range (min - 1 = {SID_RANGE_START - 1}). Update it with your current highest SID.",
             file=sys.stderr,
         )
         sys.exit(1)
-    if counter >= SID_MAX:
+    if counter >= SID_RANGE_END:
         print(
             f"Error: counter value {counter} in '{sid_file}' has reached the end of "
-            f"the allocated range (max = {SID_MAX}). No further SIDs can be assigned "
+            f"the allocated range (max = {SID_RANGE_END}). No further SIDs can be assigned "
             f"until this repo is allocated a new block.",
             file=sys.stderr,
         )
@@ -142,7 +142,7 @@ def is_rule(entry: dict) -> bool:
 
 def is_unassigned(sid: str | None) -> bool:
     """True for a placeholder SID -- sid:1, sid:2, ... -- that needs assigning."""
-    return sid is not None and int(sid) < SID_MIN
+    return sid is not None and int(sid) < SID_RANGE_START
 
 
 def parse_rules(path: Path) -> list[dict]:
@@ -307,7 +307,7 @@ def process_dir(
     all_new_msgs = sorted(set(sur_new) | set(snort_new))
 
     if not all_new_msgs:
-        print(f"  {rule_dir}: no unassigned SIDs (< {SID_MIN}) found, skipping")
+        print(f"  {rule_dir}: no unassigned SIDs (< {SID_RANGE_START}) found, skipping")
         return counter
 
     # Build existing SID maps from both files, excluding rules that are
@@ -322,7 +322,7 @@ def process_dir(
             and e['msg_norm']
             and e['sid']
             and e['msg_norm'] not in new_msgs
-            and int(e['sid']) >= SID_MIN
+            and int(e['sid']) >= SID_RANGE_START
         }
 
     sur_existing   = existing_sids(sur_entries,   sur_new)
@@ -337,15 +337,15 @@ def process_dir(
 
         partner_sid = sur_existing.get(msg_norm) or snort_existing.get(msg_norm)
 
-        if partner_sid and partner_sid >= SID_MIN:
+        if partner_sid and partner_sid >= SID_RANGE_START:
             new_sid = partner_sid
             tag = "paired (reusing partner SID)"
         else:
             counter += 1
-            if counter > SID_MAX:
+            if counter > SID_RANGE_END:
                 print(
                     f"Error: assigning a SID for \"{msg_norm}\" would produce {counter}, "
-                    f"past the end of the allocated range ({SID_MAX}). ia-feed's "
+                    f"past the end of the allocated range ({SID_RANGE_END}). ia-feed's "
                     f"sid_test.go rejects it. A new SID block is needed.",
                     file=sys.stderr,
                 )
@@ -413,10 +413,10 @@ def lint_changed_files(paths: list[Path]) -> list[str]:
                         f"one cannot be assigned a real SID."
                     )
                 continue
-            if sid > SID_MAX:
+            if sid > SID_RANGE_END:
                 errors.append(
                     f"  {path}:{ln}: sid:{sid} is past the end of the allocated "
-                    f"range [{SID_MIN}, {SID_MAX}]. ia-feed's "
+                    f"range [{SID_RANGE_START}, {SID_RANGE_END}]. ia-feed's "
                     f"sid_test.go fails on it."
                 )
     return errors
@@ -522,7 +522,7 @@ def main() -> None:
 
     # Load the block bounds (and cursor) before anything that classifies SIDs:
     # is_unassigned(), discover_placeholder_files() and the --check lint all
-    # need SID_MIN/SID_MAX, which load_policy() sets.
+    # need SID_RANGE_START/SID_RANGE_END, which load_policy() sets.
     counter = load_policy(args.sid_file)
 
     if args.list_placeholder_files:
