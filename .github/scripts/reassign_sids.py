@@ -78,8 +78,8 @@ def load_policy(sid_file: Path) -> int:
     if not sid_file.exists():
         print(
             f"Error: policy file '{sid_file}' not found.\n"
-            f"Create it with this repo's SID block and cursor, e.g.:\n"
-            f'  echo \'{{"counter": 12900000, "min": 12900001, "max": 13000001}}\' > {sid_file}',
+            f"Create it with this repo's SID block and cursor:\n"
+            f'  echo \'{{"counter": <last SID assigned>, "min": <block start>, "max": <block end>}}\' > {sid_file}',
             file=sys.stderr,
         )
         sys.exit(1)
