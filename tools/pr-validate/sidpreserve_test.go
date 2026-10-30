@@ -11,36 +11,36 @@ import (
 
 func Test_compareSIDs(t *testing.T) {
 	r := func(msg string, sid uint64) sidRule { return sidRule{msg: msg, sid: sid} }
-	known := map[uint64]bool{90000010: true, 90000011: true, 90000012: true}
+	known := map[uint64]bool{12701000: true, 12701001: true, 12701002: true}
 	tests := []struct {
 		name       string
 		head, base []sidRule
 		want       []uint64 // sids of the HEAD rules reported
 	}{
 		{"a new rule with a placeholder", []sidRule{r("a", 1)}, nil, nil},
-		{"an untouched assigned rule", []sidRule{r("a", 90000010)}, []sidRule{r("a", 90000010)}, nil},
-		{"an assigned rule reset to a placeholder", []sidRule{r("a", 1)}, []sidRule{r("a", 90000010)}, []uint64{1}},
-		{"an assigned sid changed", []sidRule{r("a", 90000011)}, []sidRule{r("a", 90000010)}, []uint64{90000011}},
-		{"an invented real sid", []sidRule{r("a", 90000099)}, nil, []uint64{90000099}},
-		{"a msg reworded, sid kept", []sidRule{r("a2", 90000010)}, []sidRule{r("a", 90000010)}, nil},
-		{"a rule moved in from another file keeps its sid", []sidRule{r("b", 90000012)}, nil, nil},
-		{"a placeholder rule beside an assigned one", []sidRule{r("a", 90000010), r("b", 1)}, []sidRule{r("a", 90000010)}, nil},
+		{"an untouched assigned rule", []sidRule{r("a", 12701000)}, []sidRule{r("a", 12701000)}, nil},
+		{"an assigned rule reset to a placeholder", []sidRule{r("a", 1)}, []sidRule{r("a", 12701000)}, []uint64{1}},
+		{"an assigned sid changed", []sidRule{r("a", 12701001)}, []sidRule{r("a", 12701000)}, []uint64{12701001}},
+		{"an invented real sid", []sidRule{r("a", 12709999)}, nil, []uint64{12709999}},
+		{"a msg reworded, sid kept", []sidRule{r("a2", 12701000)}, []sidRule{r("a", 12701000)}, nil},
+		{"a rule moved in from another file keeps its sid", []sidRule{r("b", 12701002)}, nil, nil},
+		{"a placeholder rule beside an assigned one", []sidRule{r("a", 12701000), r("b", 1)}, []sidRule{r("a", 12701000)}, nil},
 		{
 			"repeated msgs keep their own sids",
-			[]sidRule{r("a", 90000010), r("a", 90000011)},
-			[]sidRule{r("a", 90000010), r("a", 90000011)},
+			[]sidRule{r("a", 12701000), r("a", 12701001)},
+			[]sidRule{r("a", 12701000), r("a", 12701001)},
 			nil,
 		},
 		{
 			"one of two repeated msgs reset to a placeholder",
-			[]sidRule{r("a", 90000010), r("a", 1)},
-			[]sidRule{r("a", 90000010), r("a", 90000011)},
+			[]sidRule{r("a", 12701000), r("a", 1)},
+			[]sidRule{r("a", 12701000), r("a", 12701001)},
 			[]uint64{1},
 		},
 		{
 			"a third copy of a repeated msg is new",
-			[]sidRule{r("a", 90000010), r("a", 90000011), r("a", 1)},
-			[]sidRule{r("a", 90000010), r("a", 90000011)},
+			[]sidRule{r("a", 12701000), r("a", 12701001), r("a", 1)},
+			[]sidRule{r("a", 12701000), r("a", 12701001)},
 			nil,
 		},
 	}
@@ -98,13 +98,13 @@ func Test_checkSIDPreservation_git(t *testing.T) {
 	}
 
 	run("init", "-q")
-	path := write("cve-2026-0001/cve-2026-0001.snort.rule", rule("a", 90000010)+rule("b", 90000011))
-	write("cve-2026-0003/cve-2026-0003.snort.rule", rule("e", 90000012))
+	path := write("cve-2026-0001/cve-2026-0001.snort.rule", rule("a", 12701000)+rule("b", 12701001))
+	write("cve-2026-0003/cve-2026-0003.snort.rule", rule("e", 12701002))
 	run("add", ".")
 	run("commit", "-q", "-m", "base")
 
 	// The PR resets one assigned rule, renumbers the other and adds one.
-	write("cve-2026-0001/cve-2026-0001.snort.rule", rule("a", 1)+rule("b", 90000015)+rule("c", 2))
+	write("cve-2026-0001/cve-2026-0001.snort.rule", rule("a", 1)+rule("b", 12701005)+rule("c", 2))
 	// It also renames an entry, keeping its SIDs, and adds a new one.
 	run("mv", "feed/cve-2026-0003", "feed/cve-2026-0004")
 	renamed := filepath.Join(dir, "feed", "cve-2026-0004", "cve-2026-0003.snort.rule")
