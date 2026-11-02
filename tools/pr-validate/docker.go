@@ -32,6 +32,7 @@ func dockerComposeConfig() Config {
 			"docker.io/confluentinc/cp-kafka":                    true,
 			"docker.io/confluentinc/cp-zookeeper":                true,
 			"docker.io/curlimages/curl":                          true,
+			"docker.io/jenkins/inbound-agent":                    true,
 			"docker.io/prom/statsd-exporter":                     true,
 			"docker.io/rudderlabs/rudder-server":                 true,
 			"docker.io/rudderstack/rudder-transformer":           true,

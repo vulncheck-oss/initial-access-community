@@ -87,7 +87,6 @@ func ruleLintOptions(d idsrule.Dialect) idsrule.Options {
 // ruleLintWarnings are the idsrule checks whose findings are reported as
 // warnings: they need a human to judge whether the rule is wrong.
 var ruleLintWarnings = map[string]bool{
-	"keyword-unknown":       true, // the keyword tables may lag the engines
 	"sticky-buffer-empty":   true,
 	"value-unescaped-quote": true,
 }

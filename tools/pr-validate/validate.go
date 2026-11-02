@@ -186,6 +186,7 @@ func main() {
 		"CVE-2026-81578": "Chain",
 		"CVE-2026-67279": "Chain",
 		"CVE-2026-83549": "Chain",
+		"CVE-2026-73696": "Chain",
 	}
 	flag.Parse()
 

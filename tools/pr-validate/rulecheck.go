@@ -664,15 +664,33 @@ func hasFlowbitsIsset(r *cst.Rule) bool {
 	return false
 }
 
-// isSuccessSide reports whether r is the success half of a pair: either signal
-// is enough, a tested flowbit (structural) or a " Success" msg (declared).
+// isSuccessSide reports whether r is the success half of a pair.
+// A tested flowbit alone is not enough — the rule must also key on the server
+// response (flow direction or response buffer), otherwise an attempt rule that
+// gates on a prior fingerprint via flowbits:isset would be misclassified.
+// A " Success" msg is the declared signal and stands on its own.
 func isSuccessSide(r *cst.Rule) bool {
-	if hasFlowbitsIsset(r) {
+	if hasFlowbitsIsset(r) && rulesMatchesResponse(r) {
 		return true
 	}
 	msg, _ := ruleMsg(r)
 
 	return strings.HasSuffix(msg, " Success")
+}
+
+// rulesMatchesResponse is a standalone response-direction check for use outside
+// a ruleCheckCtx. It checks flow direction and response-only buffer names.
+func rulesMatchesResponse(r *cst.Rule) bool {
+	flow := ruleFlow(r)
+	if slices.Contains(flow, "from_server") || slices.Contains(flow, "to_client") {
+		return true
+	}
+	for _, o := range r.Options() {
+		if responseBuffers[o.Name()] {
+			return true
+		}
+	}
+	return false
 }
 
 // successClasstype maps an attempt classtype to the one a success rule uses

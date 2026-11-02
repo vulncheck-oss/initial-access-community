@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/buger/jsonparser"
-	"github.com/vulncheck-oss/go-exploit"
+	exploit "github.com/vulncheck-oss/go-exploit"
 	"github.com/vulncheck-oss/go-exploit/config"
 	"github.com/vulncheck-oss/go-exploit/output"
 	"github.com/vulncheck-oss/go-exploit/protocol"
@@ -16,10 +16,17 @@ import (
 
 const versionURI = "/api/v1/version"
 
-// versionResponse fetches /api/v1/version and returns (package, version, ok).
+// urlAt builds the URL for uri under basePath. Slashes are trimmed from both parts
+// before protocol.BuildURI joins them, so "" and "/" both mean the server root and
+// no slash doubles.
+func urlAt(conf *config.Config, basePath, uri string) string {
+	return conf.GenerateURL(protocol.BuildURI(strings.Trim(basePath, "/"), strings.Trim(uri, "/")))
+}
+
+// versionResponse fetches /api/v1/version under basePath and returns (package, version, ok).
 // Older releases (< 1.1.0) only carry "version"; newer ones also have "main_version".
-func versionResponse(conf *config.Config) (string, string, bool) {
-	url := conf.GenerateURL(versionURI)
+func versionResponse(conf *config.Config, basePath string) (string, string, bool) {
+	url := urlAt(conf, basePath, versionURI)
 	resp, body, ok := protocol.HTTPGetCache(url)
 	if !ok || resp.StatusCode != http.StatusOK {
 		return "", "", false
@@ -41,13 +48,19 @@ func versionResponse(conf *config.Config) (string, string, bool) {
 	return pkg, version, true
 }
 
+// DoValidateTarget checks for Langflow mounted at the server root.
 func DoValidateTarget(conf *config.Config) bool {
-	pkg, _, ok := versionResponse(conf)
+	return DoValidateTargetAt(conf, "")
+}
+
+// DoValidateTargetAt checks for Langflow mounted under basePath ("" or "/" for the root).
+func DoValidateTargetAt(conf *config.Config, basePath string) bool {
+	pkg, _, ok := versionResponse(conf, basePath)
 	if !ok || pkg != "Langflow" {
 		return false
 	}
 
-	resp, body, ok := protocol.HTTPGetCache(conf.GenerateURL(""))
+	resp, body, ok := protocol.HTTPGetCache(urlAt(conf, basePath, ""))
 	if !ok || resp.StatusCode != http.StatusOK {
 		return false
 	}
@@ -60,10 +73,7 @@ func DoValidateTarget(conf *config.Config) bool {
 	return false
 }
 
-// normalizeRe splits a PEP 440-ish version into major, minor, patch and an
-// optional pre/post-release suffix. Langflow ships all of "1.10.1rc3",
-// "1.11.0.dev20", "0.5.0a1" and "1.0.19.post1", so the separator before the
-// suffix is optional and the suffix itself must start with a letter.
+// normalizeRe splits a PEP 440-ish version into major, minor, patch and an optional pre/post suffix.
 var normalizeRe = regexp.MustCompile(`^(\d+)\.(\d+)(?:\.(\d+))?[._-]?([A-Za-z][0-9A-Za-z.]*)?$`)
 
 // version is a parsed Langflow version. suffix is lower-cased and empty when the
@@ -86,14 +96,10 @@ func (v version) isPost() bool {
 	return strings.HasPrefix(v.suffix, "post")
 }
 
-// normalizeVersion parses a version string. A missing patch component is
-// rejected rather than defaulted: Langflow reports a truncated "1.8." in
-// main_version for pre-release builds, and reading that as 1.8.0 would claim a
-// precision the string does not carry -- the real version is some 1.8.0 release
-// candidate, which may sit on either side of a fix.
+// normalizeVersion parses a version string; a missing patch component is rejected.
 func normalizeVersion(v string) (version, bool) {
 	m := normalizeRe.FindStringSubmatch(strings.TrimSpace(v))
-	if m == nil || m[3] == "" {
+	if len(m) < 5 || m[3] == "" {
 		return version{}, false
 	}
 
@@ -115,17 +121,7 @@ func normalizeVersion(v string) (version, bool) {
 	return version{major, minor, patch, strings.ToLower(m[4])}, true
 }
 
-// matchConstraint reports whether target satisfies a single vulnerableVersions
-// entry. Suffix handling is deliberately asymmetric:
-//
-//   - A range (">=1.6.0,<=1.6.9") compares on the release base, so a pre-release
-//     built inside a vulnerable range is still flagged.
-//   - An exact entry carrying a suffix ("1.8.0rc2") must match that suffix
-//     exactly. CheckSemVer cannot separate 1.8.0rc2 from 1.8.0, and for some
-//     issues the release candidates are vulnerable while the release is not.
-//   - An exact entry without a suffix ("1.8.0") means the release itself, so a
-//     target pre-release is excluded -- but a post-release is that release plus
-//     packaging fixes, so it still matches.
+// matchConstraint reports whether target satisfies a single vulnerableVersions entry.
 func matchConstraint(target version, constraint string) bool {
 	if strings.ContainsAny(constraint, "<>=,") {
 		return search.CheckSemVer(target.base(), constraint)
@@ -147,8 +143,16 @@ func matchConstraint(target version, constraint string) bool {
 	return search.CheckSemVer(target.base(), c.base())
 }
 
+// DoCheckVersion reports whether the Langflow version at the server root matches
+// any vulnerableVersions entry.
 func DoCheckVersion(conf *config.Config, vulnerableVersions []string) exploit.VersionCheckType {
-	_, raw, ok := versionResponse(conf)
+	return DoCheckVersionAt(conf, "", vulnerableVersions)
+}
+
+// DoCheckVersionAt reports whether the Langflow version under basePath ("" or "/" for
+// the root) matches any vulnerableVersions entry.
+func DoCheckVersionAt(conf *config.Config, basePath string, vulnerableVersions []string) exploit.VersionCheckType {
+	_, raw, ok := versionResponse(conf, basePath)
 	if !ok || raw == "" {
 		return exploit.Unknown
 	}

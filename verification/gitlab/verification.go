@@ -21,12 +21,7 @@ const (
 	metaHeader    = "X-Gitlab-Meta"
 )
 
-// DoValidateTarget fingerprints a GitLab instance from its landing page.
-//
-// It deliberately does not look for "Sign in" in the title. An instance that permits anonymous
-// browsing serves the explore or dashboard page at "/" instead of the login form, and its title is
-// then "Explore projects . GitLab" or similar. Only the " . GitLab" suffix is stable across those
-// configurations, which is why the cookie and header anchors carry the rest of the specificity.
+// DoValidateTarget fingerprints a GitLab instance from its landing page title suffix and session cookie.
 func DoValidateTarget(conf *config.Config) bool {
 	url := conf.GenerateURL("")
 
@@ -1181,10 +1176,19 @@ func DoGetFingerprint(conf *config.Config) (Fingerprint, bool) {
 	}
 
 	fingerprint := Fingerprint{}
-	fingerprint.MainChunk, _ = ExtractMainChunk(body)
-	fingerprint.RuntimeBundle, _ = ExtractRuntimeBundle(body)
 
-	fingerprint.ManifestHash, _ = DoGetManifestHash(conf)
+	if mc, ok := ExtractMainChunk(body); ok {
+		fingerprint.MainChunk = mc
+	}
+
+	if rb, ok := ExtractRuntimeBundle(body); ok {
+		fingerprint.RuntimeBundle = rb
+	}
+
+	if mh, ok := DoGetManifestHash(conf); ok {
+		fingerprint.ManifestHash = mh
+	}
+
 	if fingerprint.Empty() {
 		output.PrintDebug("No fingerprintable paths found")
 
@@ -1218,15 +1222,6 @@ func compatible(read []string, row []string) bool {
 
 // ResolveVersion maps a scanned fingerprint onto a harvested table, returning every release that
 // compiles it.
-//
-// PRECONDITION: every key in completeTable must carry all three parts.
-//
-// Only a target that could not read a part -- typically one whose asset manifest is blocked --
-// reaches the scan, and its answer is accepted only if exactly one row agrees with what it did read.
-//
-// The release run is returned whole rather than collapsed to one version. Whether a run answers a
-// question depends on the question, which belongs to the caller: the same 13.8.5 through 13.8.8 run
-// is decisive for one CVE's constraint and undecidable for another's.
 func ResolveVersion(completeTable map[string]string, fingerprint Fingerprint) ([]string, bool) {
 	if releases, known := completeTable[fingerprint.Key()]; known {
 		return strings.Split(releases, VersionSeparator), true
@@ -1274,12 +1269,6 @@ func VersionLabel(releases []string) string {
 
 // DoVersionCheck reads the target's build fingerprint, resolves it to the releases that compile it,
 // and evaluates a caller-supplied semver constraint against them.
-//
-// A fingerprint can covers several consecutive releases, because GitLab does not
-// recompile the frontend on a patch that touches only Ruby. A run decides the question only when
-// every release in it lands on the same side of the constraint. A run that straddles a fix boundary
-// is reported PossiblyVulnerable: the target really is one of those releases, and nothing on the
-// unauthenticated surface says which.
 func DoVersionCheck(conf *config.Config, constraint string) exploit.VersionCheckType {
 	fingerprint, ok := DoGetFingerprint(conf)
 	if !ok {
