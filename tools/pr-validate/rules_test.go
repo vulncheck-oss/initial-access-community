@@ -115,7 +115,7 @@ func Test_lintRules_generic(t *testing.T) {
 		{
 			"sid outside the VulnCheck block is an error",
 			"x.snort.rule",
-			"alert tcp any any -> any any (msg:\"VULNCHECK a Attempt\"; sid:13100000; rev:1;)\n",
+			"alert tcp any any -> any any (msg:\"VULNCHECK a Attempt\"; sid:12900000; rev:1;)\n",
 			[]string{"sid-out-of-range"},
 		},
 		{
@@ -168,24 +168,24 @@ func Test_lintRules_sids(t *testing.T) {
 		{
 			"a real sid reused in another entry",
 			map[string]string{
-				"cve-2026-0001/cve-2026-0001.snort.rule": rule("a", 12901000),
-				"cve-2026-0002/cve-2026-0002.snort.rule": rule("b", 12901000),
+				"cve-2026-0001/cve-2026-0001.snort.rule": rule("a", 12701000),
+				"cve-2026-0002/cve-2026-0002.snort.rule": rule("b", 12701000),
 			},
 			"cve-2026-0001", 1,
 		},
 		{
 			"a reuse from a sub-package is found",
 			map[string]string{
-				"cve-2026-0001/variant/cve-2026-0001.snort.rule": rule("a", 12901000),
-				"cve-2026-0002/cve-2026-0002.snort.rule":         rule("b", 12901000),
+				"cve-2026-0001/variant/cve-2026-0001.snort.rule": rule("a", 12701000),
+				"cve-2026-0002/cve-2026-0002.snort.rule":         rule("b", 12701000),
 			},
 			"cve-2026-0002", 1,
 		},
 		{
 			"snort and suricata twins share a sid",
 			map[string]string{
-				"cve-2026-0001/cve-2026-0001.snort.rule":    rule("a", 12901000),
-				"cve-2026-0001/cve-2026-0001.suricata.rule": strings.Replace(rule("a", 12901000), "tcp", "http", 1),
+				"cve-2026-0001/cve-2026-0001.snort.rule":    rule("a", 12701000),
+				"cve-2026-0001/cve-2026-0001.suricata.rule": strings.Replace(rule("a", 12701000), "tcp", "http", 1),
 			},
 			"cve-2026-0001", 0,
 		},
@@ -224,9 +224,9 @@ func Test_formatRuleDiagnostic(t *testing.T) {
 		File:    filepath.Join("..", "feed", "cve-2026-0001", "a.snort.rule"),
 		Line:    3,
 		Column:  5,
-		Message: "duplicate sid 12901000: also declared in " + filepath.Join("..", "feed", "cve-2026-0002", "b.snort.rule"),
+		Message: "duplicate sid 12701000: also declared in " + filepath.Join("..", "feed", "cve-2026-0002", "b.snort.rule"),
 	}
-	want := "cve-2026-0001/a.snort.rule:3:5: duplicate sid 12901000: also declared in cve-2026-0002/b.snort.rule"
+	want := "cve-2026-0001/a.snort.rule:3:5: duplicate sid 12701000: also declared in cve-2026-0002/b.snort.rule"
 	if got := formatRuleDiagnostic("../feed/", d); got != want {
 		t.Errorf("formatRuleDiagnostic = %q, want %q", got, want)
 	}

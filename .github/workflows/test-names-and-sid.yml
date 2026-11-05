@@ -66,7 +66,7 @@ jobs:
         CHANGED: ${{ steps.changed.outputs.files }}
       run: |
         set -euo pipefail
-        ARGS=(--check --sid-file .sid_counter)
+        ARGS=(--check --sid-file .sid.json)
         if [ -n "${CHANGED//[[:space:]]/}" ]; then
           mapfile -t FILES <<< "$CHANGED"
           ARGS+=(--changed-files "${FILES[@]}")
@@ -89,7 +89,7 @@ jobs:
         mapfile -t FILES <<< "$LIST"
         printf '  %s\n' "${FILES[@]}"
         "$PY" .github/scripts/reassign_sids.py \
-          --sid-file .sid_counter \
+          --sid-file .sid.json \
           --changed-files "${FILES[@]}"
 
     - name: Assert No Placeholder SIDs Survive
