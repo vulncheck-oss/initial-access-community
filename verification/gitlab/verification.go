@@ -1138,6 +1138,7 @@ var ChunkVersions = map[string]string{
 	"main.47476afc.chunk.js|runtime.7fba2bbc.bundle.js|48e29423e5db4e10b53e": "19.3.2",                                                                 // EE
 	"main.a40d929d.chunk.js|runtime.2e2a7b6e.bundle.js|4a0604ce2f0fef861a8e": "19.4.0",                                                                 // CE
 	"main.f1a51bb2.chunk.js|runtime.c09514ff.bundle.js|d54e81b4cb9a7e430a23": "19.4.0",                                                                 // EE
+	"main.9b4c0f6f.chunk.js|runtime.4b5612fa.bundle.js|bc71e0b5f069a4e1a22b": "19.4.2",                                                                 // CE
 }
 
 func (f Fingerprint) parts() []string {

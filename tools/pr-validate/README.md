@@ -17,6 +17,10 @@ go run . -dir ../../feed/ -offline -skip-rule-match -base-ref origin/main -entry
 
 Findings are logged as `ERROR: <ENTRY> - <message>` or `WARN: <ENTRY> - <message>`. Rule findings end in `[<check-id>]` and start with the file's `path:line:column`. Any error fails the run.
 
+## PCAPs
+
+Captures must use Ethernet framing and non-loopback IP endpoints. The `pcap-loopback-address` check rejects IPv4 `127.0.0.0/8` and IPv6 `::1` traffic; rewrite lab captures with `tools/pkt-rewrite.py` before committing them.
+
 ## Flags
 
 | Flag | Default | Use |

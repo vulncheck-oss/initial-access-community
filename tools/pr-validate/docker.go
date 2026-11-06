@@ -29,10 +29,13 @@ func dockerComposeConfig() Config {
 		AllowRepos: map[string]bool{
 			"docker.io/apache/superset":                          true,
 			"docker.io/axllent/mailpit":                          true,
+			"docker.io/btcpayserver/bitcoin":                     true,
+			"docker.io/btcpayserver/lnd":                         true,
 			"docker.io/confluentinc/cp-kafka":                    true,
 			"docker.io/confluentinc/cp-zookeeper":                true,
 			"docker.io/curlimages/curl":                          true,
 			"docker.io/jenkins/inbound-agent":                    true,
+			"docker.io/nicolasdorier/nbxplorer":                  true,
 			"docker.io/prom/statsd-exporter":                     true,
 			"docker.io/rudderlabs/rudder-server":                 true,
 			"docker.io/rudderstack/rudder-transformer":           true,

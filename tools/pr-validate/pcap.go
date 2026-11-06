@@ -21,15 +21,19 @@ import (
 // RulePcapLinkType identifies capture-link-layer findings.
 const RulePcapLinkType = "pcap-linktype"
 
+// RulePcapLoopback identifies captures containing loopback IP traffic.
+const RulePcapLoopback = "pcap-loopback-address"
+
 // pcapngMagic is the big-endian magic of a pcapng Section Header Block; a
 // classic pcap file starts with a different (byte-order-dependent) magic.
 const pcapngMagic = 0x0a0d0d0a
 
 // lintPcap reads every *.pcap/*.pcapng file under the entry directory and
-// checks its capture link type. Ethernet is the expected type and is not
-// reported; Linux "cooked" captures (SLL v1/v2) are errors because they are not
-// portable or replayable like an Ethernet capture; any other link type is a
-// warning. A file that cannot be parsed as a capture is an error.
+// checks its capture link type and IP endpoints. Ethernet is the expected type
+// and is not reported; Linux "cooked" captures (SLL v1/v2) are errors because
+// they are not portable or replayable like an Ethernet capture; any other link
+// type is a warning. Captures containing IPv4 or IPv6 loopback traffic are
+// errors. A file that cannot be parsed as a capture is an error.
 func lintPcap(dir, entryID string) int {
 	failed := 0
 	root := filepath.Join(dir, entryID)
@@ -60,9 +64,52 @@ func lintPcap(dir, entryID string) int {
 			log.Printf("WARN: %s - %s has unexpected link type %s (expected Ethernet) [%s]",
 				strings.ToUpper(entryID), path, lt, RulePcapLinkType)
 		}
+
+		hasLoopback, err := pcapHasLoopback(path)
+		if err != nil {
+			log.Printf("ERROR: %s - unable to inspect capture %s for loopback traffic: %v [%s]",
+				strings.ToUpper(entryID), path, err, RulePcapLoopback)
+			failed++
+			return nil
+		}
+		if hasLoopback {
+			log.Printf("ERROR: %s - %s contains loopback IP traffic; rewrite it with tools/pkt-rewrite.py [%s]",
+				strings.ToUpper(entryID), path, RulePcapLoopback)
+			failed++
+		}
 		return nil
 	})
 	return failed
+}
+
+// pcapHasLoopback reports whether any IPv4 or IPv6 packet in a capture has a
+// loopback source or destination address.
+func pcapHasLoopback(path string) (bool, error) {
+	r, closer, err := openPcap(path)
+	if err != nil {
+		return false, err
+	}
+	defer closer.Close()
+
+	for {
+		data, _, err := r.ReadPacketData()
+		if errors.Is(err, io.EOF) {
+			return false, nil
+		}
+		if err != nil {
+			return false, err
+		}
+
+		packet := gopacket.NewPacket(data, r.LinkType(), gopacket.DecodeOptions{Lazy: true, NoCopy: true})
+		if ipv4, ok := packet.Layer(layers.LayerTypeIPv4).(*layers.IPv4); ok &&
+			(ipv4.SrcIP.IsLoopback() || ipv4.DstIP.IsLoopback()) {
+			return true, nil
+		}
+		if ipv6, ok := packet.Layer(layers.LayerTypeIPv6).(*layers.IPv6); ok &&
+			(ipv6.SrcIP.IsLoopback() || ipv6.DstIP.IsLoopback()) {
+			return true, nil
+		}
+	}
 }
 
 // pcapLinkType returns the capture link type of a pcap or pcapng file, reading
