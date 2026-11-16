@@ -46,6 +46,7 @@ func dockerComposeConfig() Config {
 			"docker.io/wazuh/wazuh-dashboard":                    true,
 			"docker.io/wazuh/wazuh-indexer":                      true,
 			"docker.io/wazuh/wazuh-manager":                      true,
+			"quay.io/coreos/etcd":                                 true,
 		},
 	}
 }

@@ -29,7 +29,7 @@ Captures must use Ethernet framing and non-loopback IP endpoints. The `pcap-loop
 | `-entry-id` | all entries | an entry to validate; repeatable |
 | `-offline` | false | skip the online Docker image platform check |
 | `-skip-rule-match` | false | skip replaying the pcaps through Suricata and Snort |
-| `-base-ref` | none | git ref to compare rule SIDs with (`vc-sid-preserved`) and exploit source with (`vc-pcap-older-than-source`) |
+| `-base-ref` | none | git ref used to reject unsafe changed symlinks (`vc-unsafe-symlink`), compare rule SIDs (`vc-sid-preserved`) and compare exploit source with captures (`vc-pcap-older-than-source`) |
 | `-fix-rules` | false | rewrite the entries' rule files with every autofix applied first (local use; pass `-entry-id`, or every entry's rules are rewritten) |
 | `-snort-etc`, `-snort-lib`, `-suricata-config` | CI image paths | engine paths for the replay |
 
@@ -118,6 +118,7 @@ Policy:
 | Check | Level | Rule |
 |---|---|---|
 | `vc-pcap-older-than-source` | error | with `-base-ref`: when a top-level `cve-*.go` changed against the base ref, some `*-unencrypted.pcap` in the entry changed too (untracked files count); otherwise the evidence capture predates the exploit source. Every entry with exploit source, shell or not |
+| `vc-unsafe-symlink` | error | with `-base-ref`: a changed symlink must use a relative, resolvable target that remains inside the repository |
 | `vc-readme-listener-consistent` | error | in a README code block, a run command with `-lhost X -lport N` is followed (in that block, or the next ones up to the next heading) by `Starting listener on X:N` / `Starting TLS listener on X:N`, not some other address: a mismatch means the output was not captured from that command |
 | `vc-dockerfile-symlink-copy` | error | when a top-level `*.go` (typically `reverse_shell.go`) is a symlink pointing outside the entry, the Dockerfile does not `COPY *.go` (docker cannot follow the link out of the build context, so the image build breaks); use `COPY cve-*.go ./` |
 

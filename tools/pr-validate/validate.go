@@ -225,6 +225,7 @@ func main() {
 			log.Fatalf("ERROR: %v", err)
 		}
 		ruleBaseRef = ref
+		total_failures += lintChangedSymlinks(flagDirectory, flagBaseRef)
 	}
 	buildFeedSIDIndex(flagDirectory)
 
