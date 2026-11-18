@@ -18,6 +18,7 @@ artifacts:
     snortRule: false
     yara: false
     nmapScript: false
+    nucleiTemplate: false
     targetService: HTTP
     targetEncryptedComms: {yes|no|either|}
     targetDocker: false

@@ -189,6 +189,7 @@ func lintRules(dir, entryID string) int {
 			}
 		}
 		diags = append(diags, runRuleChecks(path, src, dialect, info)...)
+		diags = append(diags, gonidsDiagnostics(path, src, dialect)...)
 		if ruleBaseRef != nil {
 			preserved, err := checkSIDPreservation(ruleBaseRef, path, src)
 			if err != nil {

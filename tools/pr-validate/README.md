@@ -35,8 +35,9 @@ Captures must use Ethernet framing and non-loopback IP endpoints. The `pcap-loop
 
 ## Rule files
 
-The `*.suricata.rule` and `*.snort.rule` files of an entry, including sub-packages, are checked in four ways:
+The `*.suricata.rule` and `*.snort.rule` files of an entry, including sub-packages, are checked in five ways:
 - **Linting:** by [idsrule](https://github.com/zeroSteiner/idsrule) and by the VulnCheck checks in `rulecheck.go`. Together they enforce the mechanically checkable parts of the vc-iai `style-rules` skill. `flowbits:noalert` (§3) and the buffer and technique choices (§14, §16) still need a reviewer.
+- **gonids parse (`gonids-parse`):** every rule in a `*.suricata.rule` file must parse with [google/gonids](https://github.com/google/gonids), which the canary intel pipeline uses to edit rule metadata. gonids is stricter than Suricata, which silently ignores some things gonids rejects (a valueless `metadata` entry such as `variant`, say), and a rule gonids rejects is dropped from canary detections. Snort files are not parsed.
 - **Parity (`vc-rule-parity`):** an entry's `.suricata.rule` and its `.snort.rule` twin, paired by name, must agree on rule count and on each rule's msg, classtype and flowbits actions (§4). The two differ only in engine syntax, so a divergence is a bug in one file. The pair is skipped when either file uses a Suricata-only feature such as base64 operations, which §4 allows to diverge.
 - **Replay (`rule-pcap-match`):** every `*-unencrypted.pcap` or `*-unencrypted.pcapng` in a rule file's directory must make every rule file in that directory alert, and every rule must alert on at least one of those captures (style-rules §21). A rule whose msg contains `variant` (any case), such as `(Metasploit Variant)`, is exempt, as is a rule that cannot alert (`flowbits:noalert` or `noalert`). A directory with rules but no such capture only warns.
 - **Frontmatter:** the README flags `suricataRule` and `snortRule` must match the files.
